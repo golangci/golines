@@ -1,4 +1,4 @@
-package main
+package fixtures
 
 func SumIntsOrFloats[K comparable, V int64 | float64](
 	m map[K]V,
