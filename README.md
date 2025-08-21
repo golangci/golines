@@ -35,3 +35,5 @@ The synchronization of the fork will be done by the golangci-lint maintainers on
 ## History
 
 - sync with fc305205784a70b4cfc17397654f4c94e3153ce4 (after v0.12.2)
+- sync with v0.13.0 (no changes)
+
