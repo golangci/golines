@@ -51,7 +51,7 @@ type Config struct {
 	// defaults to goimports (if found), otherwise gofmt.
 	BaseFormatterCmd string
 
-	Logger Logger
+	Logger Logger `json:"-"`
 }
 
 // Shortener shortens a single go file according to a small set of user style

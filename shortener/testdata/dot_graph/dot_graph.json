@@ -1,0 +1,11 @@
+{
+  "MaxLen": 100,
+  "TabLen": 4,
+  "KeepAnnotations": false,
+  "ShortenComments": true,
+  "ReformatTags": true,
+  "IgnoreGenerated": true,
+  "ChainSplitDots": true,
+  "DotFile": "{{ .dotFile }}",
+  "BaseFormatterCmd": "gofmt"
+}
