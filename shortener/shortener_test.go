@@ -25,7 +25,7 @@ func TestShortener(t *testing.T) {
 			continue
 		} else if !strings.HasSuffix(fileInfo.Name(), ".go") {
 			continue
-		} else if strings.HasSuffix(fileInfo.Name(), "__exp.go") {
+		} else if strings.HasSuffix(fileInfo.Name(), ".go.golden") {
 			continue
 		}
 
@@ -68,7 +68,7 @@ func TestShortener(t *testing.T) {
 		shortenedContents, err := shortener.Shorten(contents)
 		assert.Nil(t, err)
 
-		expectedPath := fixturePath[0:len(fixturePath)-3] + "__exp" + ".go"
+		expectedPath := fixturePath[0:len(fixturePath)-3] + ".go.golden"
 
 		if os.Getenv("REGENERATE_TEST_OUTPUTS") == "true" {
 			err := os.WriteFile(expectedPath, shortenedContents, 0644)
