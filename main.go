@@ -18,13 +18,13 @@ import (
 )
 
 var (
-	// these values are provided automatically by Goreleaser
-	//   ref: https://goreleaser.com/customization/builds/
+	// these values are provided automatically by Goreleaser.
+	// ref: https://goreleaser.com/customization/builds/
 	version = "dev"
 	commit  = "none"
 	date    = "unknown"
 
-	// Flags
+	// Flags.
 	baseFormatterCmd = kingpin.Flag(
 		"base-formatter",
 		"Base formatter to use").Default("").String()
@@ -37,7 +37,7 @@ var (
 		"Show debug output").Short('d').Default("false").Bool()
 	dotFile = kingpin.Flag(
 		"dot-file",
-		"Path to dot representation of AST graph").Default("").String()
+		"Path to dot representation of the AST graph").Default("").String()
 	dryRun = kingpin.Flag(
 		"dry-run",
 		"Show diffs without writing anything").Default("false").Bool()
@@ -46,10 +46,10 @@ var (
 		"Ignore generated go files").Default("true").Bool()
 	ignoredDirs = kingpin.Flag(
 		"ignored-dirs",
-		"Directories to ignore").Default("").Strings()
+		"Directories to ignore").Default("vendor", "testdata", "node_modules").Strings()
 	keepAnnotations = kingpin.Flag(
 		"keep-annotations",
-		"Keep shortening annotations in final output").Default("false").Bool()
+		"Keep shortening annotations in the final output").Default("false").Bool()
 	listFiles = kingpin.Flag(
 		"list-files",
 		"List files that would be reformatted by this tool").Short('l').Default("false").Bool()
@@ -75,7 +75,7 @@ var (
 		"write-output",
 		"Write output to source instead of stdout").Short('w').Default("false").Bool()
 
-	// Args
+	// Args.
 	paths = kingpin.Arg(
 		"paths",
 		"Paths to format",
@@ -84,6 +84,7 @@ var (
 
 func main() {
 	kingpin.Parse()
+
 	if *debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
@@ -91,6 +92,7 @@ func main() {
 	if *versionFlag {
 		fmt.Printf("golines v%s\n\nbuild information:\n\tbuild date: %s\n\tgit commit ref: %s\n",
 			version, date, commit)
+
 		return
 	}
 
@@ -100,7 +102,8 @@ func main() {
 			slog.Error("create profile", slog.Any("error", err))
 			os.Exit(1)
 		}
-		pprof.StartCPUProfile(f)
+
+		_ = pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
 
@@ -137,66 +140,73 @@ func run() error {
 		if err != nil {
 			return err
 		}
+
 		err = handleOutput("", contents, result)
 		if err != nil {
 			return err
 		}
-	} else {
-		// Read inputs from paths provided in arguments
-		for _, path := range *paths {
-			switch info, err := os.Stat(path); {
-			case err != nil:
-				return err
-			case info.IsDir():
-				// Path is a directory- walk it
-				err = filepath.Walk(
-					path,
-					func(subPath string, f os.FileInfo, err error) error {
+
+		return nil
+	}
+
+	// Read inputs from paths provided in arguments
+	for _, path := range *paths {
+		switch info, err := os.Stat(path); {
+		case err != nil:
+			return err
+
+		case info.IsDir():
+			// Path is a directory, walk it
+			err = filepath.Walk(
+				path,
+				func(subPath string, f os.FileInfo, err error) error {
+					if err != nil {
+						return err
+					}
+
+					if f.IsDir() && skipDir(f.Name()) {
+						return fs.SkipDir
+					}
+
+					components := strings.Split(subPath, "/")
+					for _, component := range components {
+						for _, ignoredDir := range *ignoredDirs {
+							if component == ignoredDir {
+								return filepath.SkipDir
+							}
+						}
+					}
+
+					if !f.IsDir() && strings.HasSuffix(subPath, ".go") {
+						// Shorten file and generate output
+						contents, result, err := processFile(shortener, subPath)
 						if err != nil {
 							return err
 						}
 
-						if f.IsDir() && skipDir(f.Name()) {
-							return fs.SkipDir
+						err = handleOutput(subPath, contents, result)
+						if err != nil {
+							return err
 						}
+					}
 
-						components := strings.Split(subPath, "/")
-						for _, component := range components {
-							for _, ignoredDir := range *ignoredDirs {
-								if component == ignoredDir {
-									return filepath.SkipDir
-								}
-							}
-						}
+					return nil
+				},
+			)
+			if err != nil {
+				return err
+			}
 
-						if !f.IsDir() && strings.HasSuffix(subPath, ".go") {
-							// Shorten file and generate output
-							contents, result, err := processFile(shortener, subPath)
-							if err != nil {
-								return err
-							}
-							err = handleOutput(subPath, contents, result)
-							if err != nil {
-								return err
-							}
-						}
+		default:
+			// Path is a file
+			contents, result, err := processFile(shortener, path)
+			if err != nil {
+				return err
+			}
 
-						return nil
-					},
-				)
-				if err != nil {
-					return err
-				}
-			default:
-				// Path is a file
-				contents, result, err := processFile(shortener, path)
-				if err != nil {
-					return err
-				}
-				err = handleOutput(path, contents, result)
-				if err != nil {
-					return err
-				}
+			err = handleOutput(path, contents, result)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -221,24 +231,37 @@ func processFile(shortener *shortener.Shortener, path string) ([]byte, []byte, e
 	}
 
 	result, err := shortener.Shorten(contents)
+
 	return contents, result, err
 }
 
 // handleOutput generates output according to the value of the tool's
 // flags; depending on the latter, the output might be written over
 // the source file, printed to stdout, etc.
-func handleOutput(path string, contents []byte, result []byte) error {
+func handleOutput(path string, contents, result []byte) error {
 	if contents == nil {
 		return nil
-	} else if *dryRun {
-		return diff.Pretty(path, contents, result)
-	} else if *listFiles {
+	}
+
+	switch {
+	case *dryRun:
+		pretty, err := diff.Pretty(path, contents, result)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(pretty)
+
+		return nil
+
+	case *listFiles:
 		if !bytes.Equal(contents, result) {
 			fmt.Println(path)
 		}
 
 		return nil
-	} else if *writeOutput {
+
+	case *writeOutput:
 		if path == "" {
 			return errors.New("no path to write out to")
 		}
@@ -250,16 +273,18 @@ func handleOutput(path string, contents []byte, result []byte) error {
 
 		if bytes.Equal(contents, result) {
 			slog.Debug("contents unchanged, skipping write")
+
 			return nil
 		}
 
 		slog.Debug("contents changed, writing output", slog.String("path", path))
+
 		return os.WriteFile(path, result, info.Mode())
 	}
 
 	fmt.Print(string(result))
-	return nil
 
+	return nil
 }
 
 func skipDir(name string) bool {

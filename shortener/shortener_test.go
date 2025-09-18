@@ -128,7 +128,7 @@ func loadTestCases(t *testing.T) map[string]Config {
 
 		cfg := Config{}
 
-		err = json.Unmarshal(buf.Bytes(), &cfg)
+		err = json.Unmarshal(buf.Bytes(), &cfg) //nolint:musttag
 		require.NoError(t, err, cfgFile)
 
 		testCases[file] = cfg

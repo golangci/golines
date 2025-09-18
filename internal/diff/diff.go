@@ -10,15 +10,22 @@ import (
 	"golang.org/x/term"
 )
 
+const (
+	ansiGreen = "\033[92m"
+	ansiRed   = "\033[91m"
+	ansiBlue  = "\033[94m"
+	ansiEnd   = "\033[0m"
+)
+
 // Pretty prints colored, git-style diffs to the console.
-func Pretty(path string, contents []byte, results []byte) error {
-	if bytes.Equal(contents, results) {
-		return nil
+func Pretty(path string, content, result []byte) (string, error) {
+	if bytes.Equal(content, result) {
+		return "", nil
 	}
 
 	diff := difflib.UnifiedDiff{
-		A:        difflib.SplitLines(string(contents)),
-		B:        difflib.SplitLines(string(results)),
+		A:        difflib.SplitLines(string(content)),
+		B:        difflib.SplitLines(string(result)),
 		FromFile: path,
 		ToFile:   path + ".shortened",
 		Context:  3,
@@ -26,29 +33,28 @@ func Pretty(path string, contents []byte, results []byte) error {
 
 	text, err := difflib.GetUnifiedDiffString(diff)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	ansiGreen := "\033[92m"
-	ansiRed := "\033[91m"
-	ansiBlue := "\033[94m"
-	ansiEnd := "\033[0m"
-	for _, line := range strings.Split(text, "\n") {
+	var builder strings.Builder
+
+	for line := range strings.Lines(text) {
 		line = strings.TrimRight(line, " ")
 		switch {
 		case !term.IsTerminal(int(os.Stdout.Fd())) && len(line) > 0:
-			fmt.Printf("%s\n", line)
+			_, _ = fmt.Fprint(&builder, line)
 		case strings.HasPrefix(line, "+"):
-			fmt.Printf("%s%s%s\n", ansiGreen, line, ansiEnd)
+			_, _ = fmt.Fprint(&builder, ansiGreen, line, ansiEnd)
 		case strings.HasPrefix(line, "-"):
-			fmt.Printf("%s%s%s\n", ansiRed, line, ansiEnd)
+			_, _ = fmt.Fprint(&builder, ansiRed, line, ansiEnd)
 		case strings.HasPrefix(line, "^"):
-			fmt.Printf("%s%s%s\n", ansiBlue, line, ansiEnd)
+			_, _ = fmt.Fprint(&builder, ansiBlue, line, ansiEnd)
 		case len(line) > 0:
-			fmt.Printf("%s\n", line)
+			_, _ = fmt.Fprintf(&builder, "%s", line)
 		}
 	}
-	fmt.Println("")
 
-	return nil
+	_, _ = fmt.Fprintln(&builder)
+
+	return builder.String(), nil
 }
