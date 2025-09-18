@@ -1,2 +1,2 @@
-/shortener/_fixtures/* text eol=lf
+/shortener/testdata/* text eol=lf
 /go.sum linguist-generated
