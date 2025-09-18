@@ -1,5 +1,7 @@
-project_name: golines
 version: 2
+
+project_name: golines
+
 before:
   hooks:
     - go clean -x
