@@ -27,20 +27,19 @@ func main() {
 }`,
 }
 
-func TestRunDir(t *testing.T) {
+func Test_runner_run_dir(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	paths = &[]string{tmpDir}
-	writeOutput = boolPtr(false)
-	listFiles = boolPtr(false)
+	runner := NewRunner()
+	runner.paths = []string{tmpDir}
 
-	writeTestFiles(t, testFiles, false, tmpDir)
+	writeTestFiles(t, testFiles, tmpDir)
 
-	err := run()
+	err := runner.run()
 	require.NoError(t, err)
 
 	// Without writeOutput set to true, inputs should be unchanged
-	for name, contents := range testFiles {
+	for name, content := range testFiles {
 		path := filepath.Join(tmpDir, name)
 
 		bytes, err := os.ReadFile(path)
@@ -48,17 +47,18 @@ func TestRunDir(t *testing.T) {
 
 		assert.Equal(
 			t,
-			strings.TrimSpace(contents),
+			strings.TrimSpace(content),
 			strings.TrimSpace(string(bytes)),
 		)
 	}
 
-	writeOutput = boolPtr(true)
-	err = run()
+	runner.writeOutput = true
+
+	err = runner.run()
 	require.NoError(t, err)
 
 	// Now, files should be modified in place
-	for name, contents := range testFiles {
+	for name, content := range testFiles {
 		path := filepath.Join(tmpDir, name)
 
 		bytes, err := os.ReadFile(path)
@@ -66,26 +66,24 @@ func TestRunDir(t *testing.T) {
 
 		assert.NotEqual(
 			t,
-			strings.TrimSpace(contents),
+			strings.TrimSpace(content),
 			strings.TrimSpace(string(bytes)),
 		)
 	}
 }
 
-func TestRunFilePaths(t *testing.T) {
+func Test_runner_run_filePaths(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	paths = &[]string{}
-	writeOutput = boolPtr(true)
-	listFiles = boolPtr(false)
+	runner := NewRunner()
+	runner.writeOutput = true
+	runner.paths = append(runner.paths, writeTestFiles(t, testFiles, tmpDir)...)
 
-	writeTestFiles(t, testFiles, true, tmpDir)
-
-	err := run()
+	err := runner.run()
 	require.NoError(t, err)
 
 	// Now, files should be modified in place
-	for name, contents := range testFiles {
+	for name, content := range testFiles {
 		path := filepath.Join(tmpDir, name)
 
 		bytes, err := os.ReadFile(path)
@@ -93,17 +91,17 @@ func TestRunFilePaths(t *testing.T) {
 
 		assert.NotEqual(
 			t,
-			strings.TrimSpace(contents),
+			strings.TrimSpace(content),
 			strings.TrimSpace(string(bytes)),
 		)
 	}
 }
 
-func TestRunListFiles(t *testing.T) {
+func Test_runner_run_listFiles(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	paths = &[]string{}
-	listFiles = boolPtr(true)
+	runner := NewRunner()
+	runner.listFiles = true
 
 	updatedTestFiles := map[string]string{
 		"test1.go": testFiles["test1.go"],
@@ -113,9 +111,9 @@ func TestRunListFiles(t *testing.T) {
 		"test3.go": "package main\n",
 	}
 
-	writeTestFiles(t, updatedTestFiles, true, tmpDir)
+	runner.paths = append(runner.paths, writeTestFiles(t, updatedTestFiles, tmpDir)...)
 
-	output, err := captureStdout(t, run)
+	output, err := captureStdout(t, runner)
 	require.NoError(t, err)
 
 	// Only first two files appear in output list
@@ -136,32 +134,28 @@ func TestRunListFiles(t *testing.T) {
 	)
 }
 
-func boolPtr(b bool) *bool {
-	return &b
-}
-
 func writeTestFiles(
 	t *testing.T,
 	fileContents map[string]string,
-	addToPaths bool,
 	tmpDir string,
-) {
+) []string {
 	t.Helper()
 
-	for name, contents := range fileContents {
+	var tfp []string
+
+	for name, content := range fileContents {
 		path := filepath.Join(tmpDir, name)
 
-		if addToPaths {
-			tmpPaths := append(*paths, path)
-			paths = &tmpPaths
-		}
+		tfp = append(tfp, path)
 
-		err := os.WriteFile(path, []byte(contents), 0o644)
+		err := os.WriteFile(path, []byte(content), 0o644)
 		require.NoError(t, err, "Unexpected error-writing test file")
 	}
+
+	return tfp
 }
 
-func captureStdout(t *testing.T, f func() error) (string, error) {
+func captureStdout(t *testing.T, runner *Runner) (string, error) {
 	t.Helper()
 
 	origStdout := os.Stdout
@@ -175,7 +169,7 @@ func captureStdout(t *testing.T, f func() error) (string, error) {
 
 	os.Stdout = w
 
-	resultErr := f()
+	resultErr := runner.run()
 
 	err = w.Close()
 	require.NoError(t, err)
