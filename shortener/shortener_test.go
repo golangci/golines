@@ -1,4 +1,4 @@
-package main
+package shortener
 
 import (
 	"os"
@@ -42,7 +42,7 @@ func TestShortener(t *testing.T) {
 	defer os.RemoveAll(dotDir)
 
 	shortener := NewShortener(
-		ShortenerConfig{
+		Config{
 			MaxLen:           100,
 			TabLen:           4,
 			KeepAnnotations:  false,

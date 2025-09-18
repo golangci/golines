@@ -1,4 +1,4 @@
-package main
+package shortener
 
 import (
 	"bufio"
@@ -14,6 +14,9 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
+	"github.com/segmentio/golines/shortener/internal/annotation"
+	"github.com/segmentio/golines/shortener/internal/graph"
+	"github.com/segmentio/golines/shortener/internal/tags"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -33,8 +36,8 @@ var (
 // prevent loops that prevent termination.
 const maxRounds = 20
 
-// ShortenerConfig stores the configuration options exposed by a Shortener instance.
-type ShortenerConfig struct {
+// Config stores the configuration options exposed by a Shortener instance.
+type Config struct {
 	MaxLen          int    // Max target width for each line
 	TabLen          int    // Width of a tab character
 	KeepAnnotations bool   // Whether to keep annotations in final result (for debugging only)
@@ -52,7 +55,7 @@ type ShortenerConfig struct {
 // Shortener shortens a single go file according to a small set of user style
 // preferences.
 type Shortener struct {
-	config ShortenerConfig
+	config Config
 
 	// Some extra params around the base formatter generated from the BaseFormatterCmd
 	// argument in the config.
@@ -61,7 +64,7 @@ type Shortener struct {
 }
 
 // NewShortener creates a new shortener instance from the provided config.
-func NewShortener(config ShortenerConfig) *Shortener {
+func NewShortener(config Config) *Shortener {
 	var formatterComponents []string
 
 	if config.BaseFormatterCmd == "" {
@@ -116,7 +119,7 @@ func (s *Shortener) Shorten(contents []byte) ([]byte, error) {
 			if round == 0 {
 				if !s.config.ReformatTags {
 					stop = true
-				} else if !HasMultiKeyTags(lines) {
+				} else if !tags.HasMultiKeyTags(lines) {
 					stop = true
 				}
 			} else {
@@ -145,7 +148,7 @@ func (s *Shortener) Shorten(contents []byte) ([]byte, error) {
 			defer dotFile.Close()
 
 			log.Debugf("writing dot file output to %s", s.config.DotFile)
-			err = CreateDot(result, dotFile)
+			err = graph.CreateDot(result, dotFile)
 			if err != nil {
 				return nil, err
 			}
@@ -239,19 +242,19 @@ func (s *Shortener) annotateLongLines(lines []string) ([]string, int) {
 				annotatedLines = annotatedLines[:len(annotatedLines)-1]
 			} else if length < prevLen {
 				// Replace annotation with new length
-				annotatedLines[len(annotatedLines)-1] = CreateAnnotation(length)
+				annotatedLines[len(annotatedLines)-1] = annotation.Create(length)
 				linesToShorten++
 			}
 		} else if !s.isComment(line) && length > s.config.MaxLen {
 			annotatedLines = append(
 				annotatedLines,
-				CreateAnnotation(length),
+				annotation.Create(length),
 			)
 			linesToShorten++
 		}
 
 		annotatedLines = append(annotatedLines, line)
-		prevLen = ParseAnnotation(line)
+		prevLen = annotation.Parse(line)
 	}
 
 	return annotatedLines, linesToShorten
@@ -264,7 +267,7 @@ func (s *Shortener) removeAnnotations(contents []byte) []byte {
 	lines := strings.Split(string(contents), "\n")
 
 	for _, line := range lines {
-		if !IsAnnotation(line) {
+		if !annotation.Is(line) {
 			cleanedLines = append(cleanedLines, line)
 		}
 	}
@@ -280,7 +283,7 @@ func (s *Shortener) shortenCommentsFunc(contents []byte) []byte {
 	prefix := ""
 	lines := strings.Split(string(contents), "\n")
 	for _, line := range lines {
-		if s.isComment(line) && !IsAnnotation(line) &&
+		if s.isComment(line) && !annotation.Is(line) &&
 			!s.isGoDirective(line) &&
 			s.lineLen(line) > s.config.MaxLen {
 			start := strings.Index(line, "//")
@@ -381,7 +384,7 @@ func (s *Shortener) formatNode(node dst.Node) {
 func (s *Shortener) formatDecl(decl dst.Decl) {
 	switch d := decl.(type) {
 	case *dst.FuncDecl:
-		if HasAnnotationRecursive(decl) {
+		if annotation.HasRecursive(decl) {
 			if d.Type != nil && d.Type.Params != nil {
 				s.formatFieldList(d.Type.Params)
 			}
@@ -389,7 +392,7 @@ func (s *Shortener) formatDecl(decl dst.Decl) {
 		s.formatStmt(d.Body)
 	case *dst.GenDecl:
 		for _, spec := range d.Specs {
-			s.formatSpec(spec, HasAnnotation(decl))
+			s.formatSpec(spec, annotation.Has(decl))
 		}
 	default:
 		log.Debugf(
@@ -421,7 +424,7 @@ func (s *Shortener) formatStmt(stmt dst.Stmt) {
 		return
 	}
 
-	shouldShorten := HasAnnotation(stmt)
+	shouldShorten := annotation.Has(stmt)
 
 	switch st := stmt.(type) {
 	case *dst.AssignStmt:
@@ -483,7 +486,7 @@ func (s *Shortener) formatStmt(stmt dst.Stmt) {
 // formatExpr formats an AST expression node. These include uniary and binary expressions, function
 // literals, and key/value pair statements, among others.
 func (s *Shortener) formatExpr(expr dst.Expr, force bool, isChain bool) {
-	shouldShorten := force || HasAnnotation(expr)
+	shouldShorten := force || annotation.Has(expr)
 
 	switch e := expr.(type) {
 	case *dst.BinaryExpr:
@@ -502,7 +505,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force bool, isChain bool) {
 
 		if ok &&
 			s.config.ChainSplitDots &&
-			(shouldShorten || HasAnnotationRecursive(e)) &&
+			(shouldShorten || annotation.HasRecursive(e)) &&
 			(isChain || s.chainLength(e) > 1) {
 			e.Decorations().After = dst.NewLine
 
@@ -512,7 +515,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force bool, isChain bool) {
 
 			s.formatExpr(e.Fun, shouldShorten, true)
 		} else {
-			shortenChildArgs := shouldShorten || HasAnnotationRecursive(e)
+			shortenChildArgs := shouldShorten || annotation.HasRecursive(e)
 
 			for a, arg := range e.Args {
 				if shortenChildArgs {
@@ -548,7 +551,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force bool, isChain bool) {
 		}
 	case *dst.InterfaceType:
 		for _, method := range e.Methods.List {
-			if HasAnnotation(method) {
+			if annotation.Has(method) {
 				s.formatExpr(method.Type, true, isChain)
 			}
 		}
@@ -558,7 +561,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force bool, isChain bool) {
 		s.formatExpr(e.X, shouldShorten, isChain)
 	case *dst.StructType:
 		if s.config.ReformatTags {
-			FormatStructTags(e.Fields)
+			tags.FormatStructTags(e.Fields)
 		}
 	case *dst.UnaryExpr:
 		s.formatExpr(e.X, shouldShorten, isChain)
@@ -574,7 +577,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force bool, isChain bool) {
 
 // formatSpec formats an AST spec node. These include type specifications, among other things.
 func (s *Shortener) formatSpec(spec dst.Spec, force bool) {
-	shouldShorten := HasAnnotation(spec) || force
+	shouldShorten := annotation.Has(spec) || force
 	switch sp := spec.(type) {
 	case *dst.ValueSpec:
 		for _, expr := range sp.Values {
