@@ -10,21 +10,15 @@ permissions:
 
 jobs:
   goreleaser:
-    # using Ubuntu 22.04 should help maximize the
-    # glibc compatibility across the board
-    # without using a too-old-to-support version
-    # of Ubuntu.
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
-          cache: false
-      - name: release golines
-        uses: goreleaser/goreleaser-action@v6
+          go-version: stable
+      - uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: latest

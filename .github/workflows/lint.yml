@@ -1,23 +1,35 @@
 name: lint
+
 on:
   push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
 
 permissions:
   contents: read
 
 jobs:
-  golangci:
-    name: golines lint
+  lint:
+    name: Inception and Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
-          go-version: "1.24"
-          cache: false
-      - name: run golangci-lint
-        uses: golangci/golangci-lint-action@v8
+          go-version: stable
+
+      - name: Check and get dependencies
+        run: go mod tidy
+
+      # Note(ldez): there is no exit code if there is a diff. (same thing with `-w`)
+      - name: Inception
+        run: go run . .
+
+      - uses: golangci/golangci-lint-action@v8
         with:
           version: latest
-          install-mode: binary
-          skip-cache: true
