@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -45,7 +46,7 @@ var (
 		"Ignore generated go files").Default("true").Bool()
 	ignoredDirs = kingpin.Flag(
 		"ignored-dirs",
-		"Directories to ignore").Default("vendor", "node_modules", ".git").Strings()
+		"Directories to ignore").Default("").Strings()
 	keepAnnotations = kingpin.Flag(
 		"keep-annotations",
 		"Keep shortening annotations in final output").Default("false").Bool()
@@ -150,9 +151,13 @@ func run() error {
 				// Path is a directory- walk it
 				err = filepath.Walk(
 					path,
-					func(subPath string, subInfo os.FileInfo, err error) error {
+					func(subPath string, f os.FileInfo, err error) error {
 						if err != nil {
 							return err
+						}
+
+						if f.IsDir() && skipDir(f.Name()) {
+							return fs.SkipDir
 						}
 
 						components := strings.Split(subPath, "/")
@@ -164,7 +169,7 @@ func run() error {
 							}
 						}
 
-						if !subInfo.IsDir() && strings.HasSuffix(subPath, ".go") {
+						if !f.IsDir() && strings.HasSuffix(subPath, ".go") {
 							// Shorten file and generate output
 							contents, result, err := processFile(shortener, subPath)
 							if err != nil {
@@ -255,4 +260,14 @@ func handleOutput(path string, contents []byte, result []byte) error {
 	fmt.Print(string(result))
 	return nil
 
+}
+
+func skipDir(name string) bool {
+	switch name {
+	case "vendor", "testdata", "node_modules":
+		return true
+
+	default:
+		return strings.HasPrefix(name, ".")
+	}
 }
