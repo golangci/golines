@@ -3,15 +3,15 @@ package diff
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestPrettyDiff(t *testing.T) {
+func TestPretty(t *testing.T) {
 	// For now, this just tests that the script runs without error
-	err := Pretty(
+	_, err := Pretty(
 		"test_path.txt",
 		[]byte("line 1\nline 2"),
 		[]byte("line 1\nline 2 modified"),
 	)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 }

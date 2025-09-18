@@ -42,6 +42,7 @@ func CreateDot(node dst.Node, out io.Writer) error {
 	}
 
 	_, err = out.Write([]byte(dotGraph))
+
 	return err
 }
 
@@ -49,13 +50,18 @@ func CreateDot(node dst.Node, out io.Writer) error {
 // a graphviz (dot) representation.
 func Walk(root *Node) (string, error) {
 	toProcess := []*Node{root}
-	processed := []*Node{}
+
+	var processed []*Node
+
 	outLines := []string{"digraph {"}
 
-	var currLevel int
-	var currSeq int
+	var (
+		currLevel int
+		currSeq   int
+	)
 
 	// First, loop through the graph nodes to assign proper ids
+
 	for len(toProcess) != 0 {
 		currNode := toProcess[0]
 
@@ -78,8 +84,10 @@ func Walk(root *Node) (string, error) {
 
 	// Then, fill out the graph in dot format
 	for _, node := range processed {
-		var nodeLabel string
-		var nodeFormat string
+		var (
+			nodeLabel  string
+			nodeFormat string
+		)
 
 		if annotation.Has(node.Node) {
 			nodeFormat = ",penwidth=3.0"
@@ -87,7 +95,7 @@ func Walk(root *Node) (string, error) {
 
 		if node.Value != "" {
 			nodeLabel = fmt.Sprintf(
-				"%s<br/><font point-size=\"11.0\" face=\"courier\" color=\"#777777\">%s</font>",
+				`%s<br/><font point-size="11.0" face="courier" color="#777777">%s</font>`,
 				node.Type,
 				html.EscapeString(node.Value),
 			)
@@ -98,7 +106,7 @@ func Walk(root *Node) (string, error) {
 		outLines = append(
 			outLines,
 			fmt.Sprintf(
-				"\t%s[label=<%s>,shape=\"box\"%s]",
+				"\t"+`%s[label=<%s>,shape="box"%s]`,
 				node.id(),
 				nodeLabel,
 				nodeFormat,
@@ -109,7 +117,7 @@ func Walk(root *Node) (string, error) {
 			outLines = append(
 				outLines,
 				fmt.Sprintf(
-					"\t%s->%s[label=\"%s\",fontsize=12.0]",
+					"\t"+`%s->%s[label="%s",fontsize=12.0]`,
 					node.id(),
 					edge.Dest.id(),
 					edge.Relationship,
@@ -119,5 +127,6 @@ func Walk(root *Node) (string, error) {
 	}
 
 	outLines = append(outLines, "}")
+
 	return strings.Join(outLines, "\n"), nil
 }
