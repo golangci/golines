@@ -22,7 +22,7 @@ regenerate:
 
 .PHONY: graph
 graph:
-	cd generate && go run .
+	go run ./shortener/internal/generate/
 
 .PHONY: vendor
 vendor:
