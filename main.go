@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime/pprof"
@@ -13,8 +14,6 @@ import (
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/segmentio/golines/internal/diff"
 	"github.com/segmentio/golines/shortener"
-	log "github.com/sirupsen/logrus"
-	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
 var (
@@ -85,9 +84,7 @@ var (
 func main() {
 	kingpin.Parse()
 	if *debug {
-		log.SetLevel(log.DebugLevel)
-	} else {
-		log.SetLevel(log.InfoLevel)
+		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
 	if *versionFlag {
@@ -99,21 +96,17 @@ func main() {
 	if *profile != "" {
 		f, err := os.Create(*profile)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("create profile", slog.Any("error", err))
+			os.Exit(1)
 		}
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
 
-	log.SetFormatter(&prefixed.TextFormatter{
-		TimestampFormat: "2006-01-02 15:04:05",
-		FullTimestamp:   true,
-		ForceFormatting: true,
-	})
-
 	err := run()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("run", slog.Any("error", err))
+		os.Exit(1)
 	}
 }
 
@@ -128,6 +121,7 @@ func run() error {
 		DotFile:          *dotFile,
 		BaseFormatterCmd: *baseFormatterCmd,
 		ChainSplitDots:   *chainSplitDots,
+		Logger:           slog.Default(),
 	}
 	shortener := shortener.NewShortener(config)
 
@@ -214,7 +208,7 @@ func processFile(shortener *shortener.Shortener, path string) ([]byte, []byte, e
 		return nil, nil, nil
 	}
 
-	log.Debugf("processing file %s", path)
+	slog.Debug("processing file", slog.String("path", path))
 
 	contents, err := os.ReadFile(path)
 	if err != nil {
@@ -250,11 +244,11 @@ func handleOutput(path string, contents []byte, result []byte) error {
 		}
 
 		if bytes.Equal(contents, result) {
-			log.Debugf("contents unchanged, skipping write")
+			slog.Debug("contents unchanged, skipping write")
 			return nil
 		}
 
-		log.Debugf("contents changed, writing output to %s", path)
+		slog.Debug("contents changed, writing output", slog.String("path", path))
 		return os.WriteFile(path, result, info.Mode())
 	}
 
