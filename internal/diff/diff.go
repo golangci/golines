@@ -1,4 +1,4 @@
-package main
+package diff
 
 import (
 	"bytes"
@@ -10,8 +10,8 @@ import (
 	"golang.org/x/term"
 )
 
-// PrettyDiff prints colored, git-style diffs to the console.
-func PrettyDiff(path string, contents []byte, results []byte) error {
+// Pretty prints colored, git-style diffs to the console.
+func Pretty(path string, contents []byte, results []byte) error {
 	if bytes.Equal(contents, results) {
 		return nil
 	}

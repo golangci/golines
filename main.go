@@ -10,7 +10,9 @@ import (
 	"runtime/pprof"
 	"strings"
 
-	kingpin "github.com/alecthomas/kingpin/v2"
+	"github.com/alecthomas/kingpin/v2"
+	"github.com/segmentio/golines/internal/diff"
+	"github.com/segmentio/golines/shortener"
 	log "github.com/sirupsen/logrus"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
@@ -116,7 +118,7 @@ func main() {
 }
 
 func run() error {
-	config := ShortenerConfig{
+	config := shortener.Config{
 		MaxLen:           *maxLen,
 		TabLen:           *tabLen,
 		KeepAnnotations:  *keepAnnotations,
@@ -127,7 +129,7 @@ func run() error {
 		BaseFormatterCmd: *baseFormatterCmd,
 		ChainSplitDots:   *chainSplitDots,
 	}
-	shortener := NewShortener(config)
+	shortener := shortener.NewShortener(config)
 
 	if len(*paths) == 0 {
 		// Read input from stdin
@@ -206,7 +208,7 @@ func run() error {
 // processFile uses the provided Shortener instance to shorten the lines
 // in a file. It returns the original contents (useful for debugging), the
 // shortened version, and an error.
-func processFile(shortener *Shortener, path string) ([]byte, []byte, error) {
+func processFile(shortener *shortener.Shortener, path string) ([]byte, []byte, error) {
 	_, fileName := filepath.Split(path)
 	if *ignoreGenerated && strings.HasPrefix(fileName, "generated_") {
 		return nil, nil, nil
@@ -230,7 +232,7 @@ func handleOutput(path string, contents []byte, result []byte) error {
 	if contents == nil {
 		return nil
 	} else if *dryRun {
-		return PrettyDiff(path, contents, result)
+		return diff.Pretty(path, contents, result)
 	} else if *listFiles {
 		if !bytes.Equal(contents, result) {
 			fmt.Println(path)

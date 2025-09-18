@@ -1,4 +1,4 @@
-package main
+package graph
 
 import (
 	"fmt"
@@ -7,27 +7,28 @@ import (
 	"strings"
 
 	"github.com/dave/dst"
+	"github.com/segmentio/golines/shortener/internal/annotation"
 )
 
-// GraphNode is a representation of a node in the AST graph.
-type GraphNode struct {
+// Node is a representation of a node in the AST graph.
+type Node struct {
 	Type  string
 	Value string
 	Node  dst.Node
-	Edges []*GraphEdge
+	Edges []*Edge
 
 	// Used for keeping track of node position during rendering
 	level int
 	seq   int
 }
 
-func (n *GraphNode) id() string {
+func (n *Node) id() string {
 	return fmt.Sprintf("%s_%d_%d", n.Type, n.level, n.seq)
 }
 
-// GraphEdge is a representation of an edge in the AST graph.
-type GraphEdge struct {
-	Dest         *GraphNode
+// Edge is a representation of an edge in the AST graph.
+type Edge struct {
+	Dest         *Node
 	Relationship string
 }
 
@@ -35,7 +36,7 @@ type GraphEdge struct {
 func CreateDot(node dst.Node, out io.Writer) error {
 	root := NodeToGraphNode(node)
 
-	dotGraph, err := WalkGraph(root)
+	dotGraph, err := Walk(root)
 	if err != nil {
 		return err
 	}
@@ -44,11 +45,11 @@ func CreateDot(node dst.Node, out io.Writer) error {
 	return err
 }
 
-// WalkGraph walks the graph starting at the argument root and returns
+// Walk walks the graph starting at the argument root and returns
 // a graphviz (dot) representation.
-func WalkGraph(root *GraphNode) (string, error) {
-	toProcess := []*GraphNode{root}
-	processed := []*GraphNode{}
+func Walk(root *Node) (string, error) {
+	toProcess := []*Node{root}
+	processed := []*Node{}
 	outLines := []string{"digraph {"}
 
 	var currLevel int
@@ -80,7 +81,7 @@ func WalkGraph(root *GraphNode) (string, error) {
 		var nodeLabel string
 		var nodeFormat string
 
-		if HasAnnotation(node.Node) {
+		if annotation.Has(node.Node) {
 			nodeFormat = ",penwidth=3.0"
 		}
 
