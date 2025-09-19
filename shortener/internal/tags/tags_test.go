@@ -102,6 +102,29 @@ func TestFormatStructTags(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc: "raw literal",
+			list: []*dst.Field{
+				{
+					Names: []*dst.Ident{{Name: "key"}},
+					Type:  &dst.Ident{Name: "string"},
+					Tag: &dst.BasicLit{
+						Value: "`  tagKey1:\"tag \\value1\"`",
+					},
+				},
+				{
+					Names: []*dst.Ident{{Name: "value"}},
+					Type:  &dst.Ident{Name: "string"},
+					Tag: &dst.BasicLit{
+						Value: "`parameter:\"BAR\" delimiter:\"\\n\"`",
+					},
+				},
+			},
+			expected: []string{
+				"`tagKey1:\"tag \\value1\"`",
+				"`                     parameter:\"BAR\" delimiter:\"\\n\"`",
+			},
+		},
 	}
 
 	for _, test := range testCases {
