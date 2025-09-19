@@ -6,3 +6,8 @@ type MyStruct struct {
 	ALongField2 string `json:"long_field2" info:"something else"`
 	Field3      string `json:"field3" info:"third thing"`
 }
+
+type MyStruct2 struct {
+	Field1 string `   parameter:"field1"  delimiter:"\n"`
+	Field2 string ` parameter:"field2" delimiter:","`
+}
