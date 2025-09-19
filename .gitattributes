@@ -1,4 +1,0 @@
-/shortener/testdata/* text eol=lf
-/shortener/testdata/*/* text eol=lf
-/shortener/internal/graph/testdata/* text eol=lf
-/go.sum linguist-generated
