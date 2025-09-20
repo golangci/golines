@@ -5,6 +5,5 @@
   "ShortenComments": true,
   "ReformatTags": true,
   "IgnoreGenerated": false,
-  "ChainSplitDots": true,
-  "BaseFormatterCmd": "gofmt"
+  "ChainSplitDots": true
 }
