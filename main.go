@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/golangci/golines/internal/diff"
+	"github.com/golangci/golines/internal/formatter"
 	"github.com/golangci/golines/shortener"
 )
 
@@ -147,9 +149,23 @@ type Runner struct {
 	writeOutput     bool
 
 	shortener *shortener.Shortener
+
+	extraFormatter *formatter.Executable
 }
 
 func NewRunner() *Runner {
+	config := shortener.Config{
+		MaxLen:          deref(maxLen),
+		TabLen:          deref(tabLen),
+		KeepAnnotations: deref(keepAnnotations),
+		ShortenComments: deref(shortenComments),
+		ReformatTags:    deref(reformatTags),
+		IgnoreGenerated: deref(ignoreGenerated),
+		DotFile:         deref(dotFile),
+		ChainSplitDots:  deref(chainSplitDots),
+		Logger:          slog.Default(),
+	}
+
 	return &Runner{
 		args:            deref(paths),
 		ignoredDirs:     deref(ignoredDirs),
@@ -158,18 +174,8 @@ func NewRunner() *Runner {
 		listFiles:       deref(listFiles),
 		writeOutput:     deref(writeOutput),
 
-		shortener: shortener.NewShortener(shortener.Config{
-			MaxLen:           deref(maxLen),
-			TabLen:           deref(tabLen),
-			KeepAnnotations:  deref(keepAnnotations),
-			ShortenComments:  deref(shortenComments),
-			ReformatTags:     deref(reformatTags),
-			IgnoreGenerated:  deref(ignoreGenerated),
-			DotFile:          deref(dotFile),
-			BaseFormatterCmd: deref(baseFormatterCmd),
-			ChainSplitDots:   deref(chainSplitDots),
-			Logger:           slog.Default(),
-		}),
+		shortener:      shortener.NewShortener(config),
+		extraFormatter: formatter.NewExecutable(deref(baseFormatterCmd)),
 	}
 }
 
@@ -245,7 +251,19 @@ func (r *Runner) processFile(path string, info fs.FileInfo, in io.Reader, rp *re
 		return err
 	}
 
-	result, err := r.shortener.Shorten(content)
+	// Do initial, non-line-length-aware formatting
+	result, err := r.extraFormatter.Format(context.Background(), content)
+	if err != nil {
+		return err
+	}
+
+	result, err = r.shortener.Shorten(result)
+	if err != nil {
+		return err
+	}
+
+	// Do the final round of non-line-length-aware formatting after we've fixed up the comments
+	result, err = r.extraFormatter.Format(context.Background(), result)
 	if err != nil {
 		return err
 	}

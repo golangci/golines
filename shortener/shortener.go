@@ -8,7 +8,6 @@ import (
 	"go/token"
 	"log/slog"
 	"os"
-	"os/exec"
 	"reflect"
 	"regexp"
 	"strings"
@@ -47,10 +46,6 @@ type Config struct {
 	DotFile         string // Path to write dot-formatted output to (for debugging only)
 	ChainSplitDots  bool   // Whether to split chain methods by putting dots at the ends of lines
 
-	// Formatter that will be run before and after the main shortening process. If empty,
-	// defaults to goimports (if found), otherwise gofmt.
-	BaseFormatterCmd string
-
 	Logger Logger `json:"-"`
 }
 
@@ -58,43 +53,18 @@ type Config struct {
 type Shortener struct {
 	config Config
 
-	// Some extra params around the base formatter,
-	// generated from the BaseFormatterCmd argument in the config.
-	baseFormatter     string
-	baseFormatterArgs []string
-
 	logger Logger
 }
 
 // NewShortener creates a new shortener instance from the provided config.
 func NewShortener(config Config) *Shortener {
-	var formatterComponents []string
-
-	if config.BaseFormatterCmd == "" {
-		_, err := exec.LookPath("goimports")
-		if err != nil {
-			formatterComponents = []string{"gofmt"}
-		} else {
-			formatterComponents = []string{"goimports"}
-		}
-	} else {
-		formatterComponents = strings.Split(config.BaseFormatterCmd, " ")
-	}
-
 	s := &Shortener{
-		config:        config,
-		baseFormatter: formatterComponents[0],
+		config: config,
+		logger: config.Logger,
 	}
 
-	s.logger = config.Logger
 	if s.config.Logger == nil {
 		s.logger = &noopLogger{}
-	}
-
-	if len(formatterComponents) > 1 {
-		s.baseFormatterArgs = formatterComponents[1:]
-	} else {
-		s.baseFormatterArgs = []string{}
 	}
 
 	return s
@@ -111,7 +81,7 @@ func (s *Shortener) Shorten(content []byte) ([]byte, error) {
 	var err error
 
 	// Do initial, non-line-length-aware formatting
-	content, err = s.formatSrc(content)
+	content, err = format.Source(content)
 	if err != nil {
 		return nil, fmt.Errorf("error formatting source: %w", err)
 	}
@@ -189,48 +159,12 @@ func (s *Shortener) Shorten(content []byte) ([]byte, error) {
 	}
 
 	// Do the final round of non-line-length-aware formatting after we've fixed up the comments
-	content, err = s.formatSrc(content)
+	content, err = format.Source(content)
 	if err != nil {
 		return nil, fmt.Errorf("error formatting source: %w", err)
 	}
 
 	return content, nil
-}
-
-// formatSrc formats the provided source bytes using the configured "base" formatter
-// (typically goimports or gofmt).
-func (s *Shortener) formatSrc(content []byte) ([]byte, error) {
-	if s.baseFormatter == "gofmt" {
-		return format.Source(content)
-	}
-
-	cmd := exec.Command(s.baseFormatter, s.baseFormatterArgs...)
-
-	stdinPipe, err := cmd.StdinPipe()
-	if err != nil {
-		return nil, err
-	}
-
-	outBuffer := &bytes.Buffer{}
-	cmd.Stdout = outBuffer
-
-	if err = cmd.Start(); err != nil {
-		return nil, err
-	}
-
-	_, err = stdinPipe.Write(content)
-	if err != nil {
-		return nil, err
-	}
-
-	_ = stdinPipe.Close()
-
-	err = cmd.Wait()
-	if err != nil {
-		return nil, err
-	}
-
-	return outBuffer.Bytes(), nil
 }
 
 // annotateLongLines adds specially formatted comments to all eligible lines that are longer than

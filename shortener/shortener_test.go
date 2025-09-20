@@ -99,14 +99,13 @@ func loadTestCases(t *testing.T) map[string]Config {
 		_, err = os.Stat(cfgFile)
 		if errors.Is(err, fs.ErrNotExist) {
 			testCases[file] = Config{
-				MaxLen:           100,
-				TabLen:           4,
-				KeepAnnotations:  false,
-				ShortenComments:  false,
-				ReformatTags:     true,
-				IgnoreGenerated:  true,
-				BaseFormatterCmd: "gofmt",
-				ChainSplitDots:   true,
+				MaxLen:          100,
+				TabLen:          4,
+				KeepAnnotations: false,
+				ShortenComments: false,
+				ReformatTags:    true,
+				IgnoreGenerated: true,
+				ChainSplitDots:  true,
 			}
 
 			return nil

@@ -6,6 +6,5 @@
   "ReformatTags": true,
   "IgnoreGenerated": true,
   "ChainSplitDots": true,
-  "DotFile": "{{ .dotFile }}",
-  "BaseFormatterCmd": "gofmt"
+  "DotFile": "{{ .dotFile }}"
 }
