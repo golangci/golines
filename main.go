@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/pprof"
 	"slices"
 	"strings"
@@ -91,36 +93,53 @@ func main() {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
-	err := run()
-	if err != nil {
-		slog.Error("run", slog.Any("error", err))
-		os.Exit(1)
-	}
+	// Arbitrarily limit in-flight work to 2MiB times the number of threads.
+	//
+	// The actual overhead for the parse tree and output will depend on the
+	// specifics of the file, but this at least keeps the footprint of the process
+	// roughly proportional to GOMAXPROCS.
+	maxWeight := (2 << 20) * int64(runtime.GOMAXPROCS(0))
+
+	s := newSequencer(maxWeight, os.Stdout, os.Stderr)
+
+	run(s)
+
+	os.Exit(s.GetExitCode())
 }
 
-func run() error {
+func run(s *sequencer) {
 	if deref(versionFlag) {
-		fmt.Printf("golines v%s\n\nbuild information:\n\tbuild date: %s\n\tgit commit ref: %s\n",
-			version, date, commit)
+		fmt.Printf( //nolint:forbidigo
+			"golines v%s\n\nbuild information:\n\tbuild date: %s\n\tgit commit ref: %s\n",
+			version, date, commit,
+		)
 
-		return nil
+		return
 	}
 
 	if deref(profile) != "" {
+		fdSem <- true
+
 		f, err := os.Create(*profile)
 		if err != nil {
-			return fmt.Errorf("create profile: %w", err)
+			s.AddReport(fmt.Errorf("creating cpu profile: %w", err))
 		}
+
+		defer func() {
+			_ = f.Close()
+
+			<-fdSem
+		}()
 
 		_ = pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
 
-	return NewRunner().run()
+	NewRunner().run(s)
 }
 
 type Runner struct {
-	paths           []string
+	args            []string
 	ignoredDirs     []string
 	ignoreGenerated bool
 	dryRun          bool
@@ -132,7 +151,7 @@ type Runner struct {
 
 func NewRunner() *Runner {
 	return &Runner{
-		paths:           deref(paths),
+		args:            deref(paths),
 		ignoredDirs:     deref(ignoredDirs),
 		ignoreGenerated: deref(ignoreGenerated),
 		dryRun:          deref(dryRun),
@@ -154,80 +173,74 @@ func NewRunner() *Runner {
 	}
 }
 
-func (r *Runner) run() error {
+func (r *Runner) run(s *sequencer) {
 	// Read input from stdin
-	if len(r.paths) == 0 {
-		content, err := io.ReadAll(os.Stdin)
-		if err != nil {
-			return err
-		}
+	if len(r.args) == 0 {
+		s.Add(0, func(rp *reporter) error {
+			return r.processFile("<standard input>", nil, os.Stdin, rp)
+		})
 
-		result, err := r.shortener.Shorten(content)
-		if err != nil {
-			return err
-		}
-
-		err = r.handleOutput("", content, result)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return
 	}
 
 	// Read inputs from paths provided in arguments
-	for _, path := range r.paths {
-		info, err := os.Stat(path)
-		if err != nil {
-			return err
-		}
+	for _, arg := range r.args {
+		switch info, err := os.Stat(arg); {
+		case err != nil:
+			s.AddReport(err)
 
-		// Path is a file
-		if !info.IsDir() {
-			if r.isIgnoredFile(path) {
-				return nil
+		case !info.IsDir():
+			if r.isIgnoredFile(arg) {
+				return
 			}
 
-			err = r.process(path)
+			s.Add(fileWeight(arg, info), func(rp *reporter) error {
+				return r.processFile(arg, info, nil, rp)
+			})
+
+		default:
+			// Path is a directory, walk it
+			err = filepath.WalkDir(arg, func(path string, f fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+
+				if r.skipDir(path, f) {
+					return filepath.SkipDir
+				}
+
+				if f.IsDir() {
+					return nil
+				}
+
+				if r.isIgnoredFile(path) {
+					return nil
+				}
+
+				info, err := f.Info()
+				if err != nil {
+					s.AddReport(err)
+
+					return nil
+				}
+
+				s.Add(fileWeight(path, info), func(rp *reporter) error {
+					return r.processFile(path, info, nil, rp)
+				})
+
+				return nil
+			})
 			if err != nil {
-				return err
+				s.AddReport(err)
 			}
-
-			continue
-		}
-
-		// Path is a directory, walk it
-		err = filepath.Walk(path, func(subPath string, f os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if r.skipDir(subPath, f) {
-				return filepath.SkipDir
-			}
-
-			if f.IsDir() {
-				return nil
-			}
-
-			if r.isIgnoredFile(subPath) {
-				return nil
-			}
-
-			return r.process(subPath)
-		})
-		if err != nil {
-			return err
 		}
 	}
-
-	return nil
 }
 
-func (r *Runner) process(path string) error {
+func (r *Runner) processFile(path string, info fs.FileInfo, in io.Reader, rp *reporter) error {
 	slog.Debug("processing file", slog.String("path", path))
 
-	content, err := os.ReadFile(path)
+	content, err := readFile(path, info, in)
 	if err != nil {
 		return err
 	}
@@ -237,61 +250,66 @@ func (r *Runner) process(path string) error {
 		return err
 	}
 
-	return r.handleOutput(path, content, result)
+	return r.handleOutput(path, content, result, info, rp)
 }
 
 // handleOutput generates output according to the value of the tool's
 // flags; depending on the latter, the output might be written over
 // the source file, printed to stdout, etc.
-func (r *Runner) handleOutput(path string, content, result []byte) error {
+func (r *Runner) handleOutput(
+	filename string,
+	src, res []byte,
+	info fs.FileInfo,
+	rp *reporter,
+) error {
 	switch {
 	case r.dryRun:
-		pretty, err := diff.Pretty(path, content, result)
+		pretty, err := diff.Pretty(filename, src, res)
 		if err != nil {
 			return err
 		}
 
 		if len(pretty) > 0 {
-			fmt.Println(pretty)
+			_, _ = rp.Write([]byte(pretty))
 		}
 
 		return nil
 
 	case r.listFiles:
-		if !bytes.Equal(content, result) {
-			fmt.Println(path)
+		if !bytes.Equal(src, res) {
+			_, _ = fmt.Fprintln(rp, filename)
 		}
 
 		return nil
 
 	case r.writeOutput:
-		if path == "" {
+		if filename == "" {
 			return errors.New("no path to write out to")
 		}
 
-		if bytes.Equal(content, result) {
+		if bytes.Equal(src, res) {
 			slog.Debug("content unchanged, skipping write")
 
 			return nil
 		}
 
-		info, err := os.Stat(path)
-		if err != nil {
+		slog.Debug("content changed, writing output", slog.String("path", filename))
+
+		perm := info.Mode().Perm()
+		if err := writeFile(filename, src, res, perm, info.Size()); err != nil {
 			return err
 		}
 
-		slog.Debug("content changed, writing output", slog.String("path", path))
-
-		return os.WriteFile(path, result, info.Mode())
+		return nil
 
 	default:
-		fmt.Print(string(result))
+		_, _ = rp.Write(res)
 
 		return nil
 	}
 }
 
-func (r *Runner) skipDir(subPath string, f os.FileInfo) bool {
+func (r *Runner) skipDir(subPath string, f fs.DirEntry) bool {
 	if f.IsDir() {
 		switch f.Name() {
 		case "vendor", "testdata", "node_modules":
@@ -306,8 +324,8 @@ func (r *Runner) skipDir(subPath string, f os.FileInfo) bool {
 		return false
 	}
 
-	parts := strings.Split(subPath, "/")
-	for _, part := range parts {
+	parts := strings.SplitSeq(subPath, "/")
+	for part := range parts {
 		if slices.Contains(r.ignoredDirs, part) {
 			return true
 		}

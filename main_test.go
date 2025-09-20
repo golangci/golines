@@ -1,10 +1,11 @@
 package main
 
 import (
-	"io"
+	"bytes"
+	"maps"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 
@@ -30,44 +31,46 @@ func main() {
 func Test_runner_run_dir(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	runner := NewRunner()
-	runner.paths = []string{tmpDir}
-
 	writeTestFiles(t, testFiles, tmpDir)
 
-	err := runner.run()
-	require.NoError(t, err)
+	runner := NewRunner()
+	runner.args = []string{tmpDir}
+
+	s := newSequencer(1, os.Stdout, os.Stderr)
+
+	runner.run(s)
+	require.Equal(t, 0, s.GetExitCode())
 
 	// Without writeOutput set to true, inputs should be unchanged
-	for name, content := range testFiles {
+	for name, expected := range testFiles {
 		path := filepath.Join(tmpDir, name)
 
-		bytes, err := os.ReadFile(path)
+		content, err := os.ReadFile(path)
 		require.NoError(t, err, "Unexpected error reading test file")
 
 		assert.Equal(
 			t,
-			strings.TrimSpace(content),
-			strings.TrimSpace(string(bytes)),
+			strings.TrimSpace(expected),
+			strings.TrimSpace(string(content)),
 		)
 	}
 
 	runner.writeOutput = true
 
-	err = runner.run()
-	require.NoError(t, err)
+	runner.run(s)
+	require.Equal(t, 0, s.GetExitCode())
 
 	// Now, files should be modified in place
-	for name, content := range testFiles {
+	for name, expected := range testFiles {
 		path := filepath.Join(tmpDir, name)
 
-		bytes, err := os.ReadFile(path)
+		content, err := os.ReadFile(path)
 		require.NoError(t, err, "Unexpected error reading test file")
 
 		assert.NotEqual(
 			t,
-			strings.TrimSpace(content),
-			strings.TrimSpace(string(bytes)),
+			strings.TrimSpace(expected),
+			strings.TrimSpace(string(content)),
 		)
 	}
 }
@@ -77,55 +80,57 @@ func Test_runner_run_filePaths(t *testing.T) {
 
 	runner := NewRunner()
 	runner.writeOutput = true
-	runner.paths = append(runner.paths, writeTestFiles(t, testFiles, tmpDir)...)
+	runner.args = append(runner.args, writeTestFiles(t, testFiles, tmpDir)...)
 
-	err := runner.run()
-	require.NoError(t, err)
+	s := newSequencer(1, os.Stdout, os.Stderr)
+
+	runner.run(s)
+	require.Equal(t, 0, s.GetExitCode())
 
 	// Now, files should be modified in place
-	for name, content := range testFiles {
-		path := filepath.Join(tmpDir, name)
-
-		bytes, err := os.ReadFile(path)
+	for name, expected := range testFiles {
+		content, err := os.ReadFile(filepath.Join(tmpDir, name))
 		require.NoError(t, err, "Unexpected error reading test file")
 
 		assert.NotEqual(
 			t,
-			strings.TrimSpace(content),
-			strings.TrimSpace(string(bytes)),
+			strings.TrimSpace(expected),
+			strings.TrimSpace(string(content)),
 		)
 	}
+
+	require.Equal(t, 0, s.GetExitCode())
 }
 
 func Test_runner_run_listFiles(t *testing.T) {
 	tmpDir := t.TempDir()
 
+	updatedTestFiles := maps.Clone(testFiles)
+
+	// File that doesn't need to be shortened
+	updatedTestFiles["test3.go"] = "package main\n"
+
 	runner := NewRunner()
 	runner.listFiles = true
+	runner.args = append(runner.args, writeTestFiles(t, updatedTestFiles, tmpDir)...)
 
-	updatedTestFiles := map[string]string{
-		"test1.go": testFiles["test1.go"],
-		"test2.go": testFiles["test2.go"],
+	var buf bytes.Buffer
 
-		// File that doesn't need to be shortened
-		"test3.go": "package main\n",
-	}
+	s := newSequencer(1, &buf, os.Stderr)
 
-	runner.paths = append(runner.paths, writeTestFiles(t, updatedTestFiles, tmpDir)...)
+	runner.run(s)
 
-	output, err := captureStdout(t, runner)
-	require.NoError(t, err)
+	require.Equal(t, 0, s.GetExitCode())
 
-	// Only first two files appear in output list
+	// Only the first two files appear in the output list
 	expectedPaths := []string{
 		filepath.Join(tmpDir, "test1.go"),
 		filepath.Join(tmpDir, "test2.go"),
 	}
 
-	actualPaths := strings.Split(strings.TrimSpace(output), "\n")
-	sort.Slice(actualPaths, func(i, j int) bool {
-		return actualPaths[i] < actualPaths[j]
-	})
+	actualPaths := strings.Split(strings.TrimSpace(buf.String()), "\n")
+
+	slices.Sort(actualPaths)
 
 	assert.Equal(
 		t,
@@ -141,41 +146,16 @@ func writeTestFiles(
 ) []string {
 	t.Helper()
 
-	var tfp []string
+	var filePaths []string
 
 	for name, content := range fileContents {
 		path := filepath.Join(tmpDir, name)
 
-		tfp = append(tfp, path)
+		filePaths = append(filePaths, path)
 
 		err := os.WriteFile(path, []byte(content), 0o644)
 		require.NoError(t, err, "Unexpected error-writing test file")
 	}
 
-	return tfp
-}
-
-func captureStdout(t *testing.T, runner *Runner) (string, error) {
-	t.Helper()
-
-	origStdout := os.Stdout
-
-	defer func() {
-		os.Stdout = origStdout
-	}()
-
-	r, w, err := os.Pipe()
-	require.NoError(t, err, "Unexpected error opening pipe")
-
-	os.Stdout = w
-
-	resultErr := runner.run()
-
-	err = w.Close()
-	require.NoError(t, err)
-
-	outBytes, err := io.ReadAll(r)
-	require.NoError(t, err, "Unexpected error reading result")
-
-	return string(outBytes), resultErr
+	return filePaths
 }
