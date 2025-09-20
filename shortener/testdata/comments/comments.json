@@ -4,6 +4,5 @@
   "KeepAnnotations": false,
   "ShortenComments": true,
   "ReformatTags": true,
-  "IgnoreGenerated": true,
   "ChainSplitDots": true
 }

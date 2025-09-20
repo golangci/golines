@@ -104,7 +104,6 @@ func loadTestCases(t *testing.T) map[string]Config {
 				KeepAnnotations: false,
 				ShortenComments: false,
 				ReformatTags:    true,
-				IgnoreGenerated: true,
 				ChainSplitDots:  true,
 			}
 

@@ -1,9 +1,0 @@
-{
-  "MaxLen": 100,
-  "TabLen": 4,
-  "KeepAnnotations": false,
-  "ShortenComments": true,
-  "ReformatTags": true,
-  "IgnoreGenerated": false,
-  "ChainSplitDots": true
-}
