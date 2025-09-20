@@ -18,8 +18,9 @@ import (
 	"github.com/golangci/golines/shortener/internal/tags"
 )
 
-// Go directives (should be ignored).
-var goDirectiveLine = regexp.MustCompile(`\s*//\s*go:.*`)
+// Go directive (should be ignored).
+// https://go.dev/doc/comment#syntax
+var directivePattern = regexp.MustCompile(`\s*//(line |extern |export |[a-z0-9]+:[a-z0-9])`)
 
 // The maximum number of shortening "rounds" that we'll allow.
 // The shortening process should converge quickly,
@@ -217,7 +218,7 @@ func (s *Shortener) shortenCommentsFunc(content []byte) []byte {
 	lines := strings.SplitSeq(string(content), "\n")
 	for line := range lines {
 		if s.isComment(line) && !annotation.Is(line) &&
-			!s.isGoDirective(line) &&
+			!s.isDirective(line) &&
 			s.lineLen(line) > s.config.MaxLen {
 			start := strings.Index(line, "//")
 			prefix = line[0:(start + 2)]
@@ -289,9 +290,9 @@ func (s *Shortener) isComment(line string) bool {
 	return strings.HasPrefix(strings.Trim(line, " \t"), "//")
 }
 
-// isGoDirective determines whether the provided line is a go directive, e.g., for go generate.
-func (s *Shortener) isGoDirective(line string) bool {
-	return goDirectiveLine.MatchString(line)
+// isDirective determines whether the provided line is a directive, e.g., for `go:generate`.
+func (s *Shortener) isDirective(line string) bool {
+	return directivePattern.MatchString(line)
 }
 
 // formatNode formats the provided AST node. The appropriate helper function is called

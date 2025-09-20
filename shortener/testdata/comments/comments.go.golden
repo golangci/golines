@@ -22,7 +22,7 @@ import "fmt"
 		return "", nil
 	}
 */
-// go:generate this is a really long go generate line. We don't want to shorten this because that could cause problems running go generate.
+//go:generate this is a really long go generate line. We don't want to shorten this because that could cause problems running go generate.
 func testFunc() {
 	for i := 0; i < 10; i++ {
 		if i > 5 {
