@@ -12,8 +12,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
-	"slices"
-	"strings"
 
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/golangci/golines/internal/diff"
@@ -160,7 +158,6 @@ func NewRunner() *Runner {
 		KeepAnnotations: deref(keepAnnotations),
 		ShortenComments: deref(shortenComments),
 		ReformatTags:    deref(reformatTags),
-		IgnoreGenerated: deref(ignoreGenerated),
 		DotFile:         deref(dotFile),
 		ChainSplitDots:  deref(chainSplitDots),
 		Logger:          slog.Default(),
@@ -251,6 +248,10 @@ func (r *Runner) processFile(path string, info fs.FileInfo, in io.Reader, rp *re
 		return err
 	}
 
+	if r.ignoreGenerated && r.isGenerated(content) {
+		return nil
+	}
+
 	// Do initial, non-line-length-aware formatting
 	result, err := r.extraFormatter.Format(context.Background(), content)
 	if err != nil {
@@ -325,41 +326,6 @@ func (r *Runner) handleOutput(
 
 		return nil
 	}
-}
-
-func (r *Runner) skipDir(subPath string, f fs.DirEntry) bool {
-	if f.IsDir() {
-		switch f.Name() {
-		case "vendor", "testdata", "node_modules":
-			return true
-
-		default:
-			return f.Name() != "." && strings.HasPrefix(f.Name(), ".")
-		}
-	}
-
-	if len(r.ignoredDirs) == 0 {
-		return false
-	}
-
-	parts := strings.SplitSeq(subPath, "/")
-	for part := range parts {
-		if slices.Contains(r.ignoredDirs, part) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (r *Runner) isIgnoredFile(path string) bool {
-	if !strings.HasSuffix(path, ".go") {
-		return true
-	}
-
-	_, fileName := filepath.Split(path)
-
-	return r.ignoreGenerated && strings.HasPrefix(fileName, "generated_")
 }
 
 func deref[T any](v *T) T { //nolint:ireturn
