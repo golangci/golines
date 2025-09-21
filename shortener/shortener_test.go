@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,11 +21,16 @@ const testdataDir = "testdata"
 // TestShortener verifies the core shortening functionality on the files in the `testdata` directory.
 // To update the expected outputs, run tests with the `REGENERATE_TEST_OUTPUTS` environment variable set to `true`.
 func TestShortener(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		AddSource: false,
+		Level:     slog.LevelInfo,
+	}))
+
 	for file, config := range loadTestCases(t) {
 		t.Run(file, func(t *testing.T) {
 			t.Parallel()
 
-			shortener := NewShortener(config)
+			shortener := NewShortener(config, WithLogger(logger))
 
 			content, err := os.ReadFile(file)
 			require.NoErrorf(t, err,

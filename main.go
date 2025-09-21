@@ -160,7 +160,6 @@ func NewRunner() *Runner {
 		ReformatTags:    deref(reformatTags),
 		DotFile:         deref(dotFile),
 		ChainSplitDots:  deref(chainSplitDots),
-		Logger:          slog.Default(),
 	}
 
 	return &Runner{
@@ -171,7 +170,7 @@ func NewRunner() *Runner {
 		listFiles:       deref(listFiles),
 		writeOutput:     deref(writeOutput),
 
-		shortener:      shortener.NewShortener(config),
+		shortener:      shortener.NewShortener(config, shortener.WithLogger(slog.Default())),
 		extraFormatter: formatter.NewExecutable(deref(baseFormatterCmd)),
 	}
 }
