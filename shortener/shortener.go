@@ -38,6 +38,19 @@ type Config struct {
 	ChainSplitDots  bool   // Whether to split chain methods by putting dots at the ends of lines
 }
 
+// NewDefaultConfig returns a [Config] with default values.
+func NewDefaultConfig() Config {
+	return Config{
+		MaxLen:          100,
+		TabLen:          4,
+		KeepAnnotations: false,
+		ShortenComments: false,
+		ReformatTags:    true,
+		DotFile:         "",
+		ChainSplitDots:  true,
+	}
+}
+
 // Options is the type for configuring options of a [Shortener] instance.
 type Options func(*Shortener)
 

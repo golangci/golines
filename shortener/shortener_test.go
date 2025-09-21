@@ -104,14 +104,7 @@ func loadTestCases(t *testing.T) map[string]Config {
 
 		_, err = os.Stat(cfgFile)
 		if errors.Is(err, fs.ErrNotExist) {
-			testCases[file] = Config{
-				MaxLen:          100,
-				TabLen:          4,
-				KeepAnnotations: false,
-				ShortenComments: false,
-				ReformatTags:    true,
-				ChainSplitDots:  true,
-			}
+			testCases[file] = NewDefaultConfig()
 
 			return nil
 		}
