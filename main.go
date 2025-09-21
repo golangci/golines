@@ -262,10 +262,12 @@ func (r *Runner) processFile(path string, info fs.FileInfo, in io.Reader, rp *re
 		return err
 	}
 
-	// Do the final round of non-line-length-aware formatting after we've fixed up the comments
-	result, err = r.extraFormatter.Format(context.Background(), result)
-	if err != nil {
-		return err
+	if !r.extraFormatter.IsGofmtCompliant() {
+		// Do the final round of non-line-length-aware formatting after we've fixed up the comments
+		result, err = r.extraFormatter.Format(context.Background(), result)
+		if err != nil {
+			return err
+		}
 	}
 
 	return r.handleOutput(path, content, result, info, rp)

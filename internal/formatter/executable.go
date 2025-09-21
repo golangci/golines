@@ -11,7 +11,10 @@ import (
 	"golang.org/x/tools/imports"
 )
 
-const defaultFormatter = "goimports"
+const (
+	defaultFormatter = "goimports"
+	gofmt            = "gofmt"
+)
 
 type Executable struct {
 	// Some extra params around the base formatter,
@@ -35,7 +38,7 @@ func NewExecutable(rawCmd string) *Executable {
 		return &Executable{cmd: defaultFormatter}
 
 	// gofmt is the default internal formatter.
-	case "gofmt":
+	case gofmt:
 		return &Executable{skip: true}
 	}
 
@@ -67,6 +70,16 @@ func (e *Executable) Format(ctx context.Context, src []byte) ([]byte, error) {
 	}
 
 	return e.exec(ctx, src)
+}
+
+// IsGofmtCompliant returns true if the formatter is compliant with gofmt.
+//
+// The goal is to avoid formatting after the Shortener if it's not necessary:
+//   - `gofmt` is run by the Shortener
+//   - `goimports` is based on `gofmt` but also changes the order of the imports,
+//     but the Shortener doesn't change the order of the imports.
+func (e *Executable) IsGofmtCompliant() bool {
+	return e.cmd == defaultFormatter || e.cmd == gofmt
 }
 
 func (e *Executable) exec(ctx context.Context, src []byte) ([]byte, error) {
