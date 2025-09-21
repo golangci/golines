@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"os/exec"
 	"strings"
+
+	"golang.org/x/tools/imports"
 )
 
 const defaultFormatter = "goimports"
@@ -51,6 +53,17 @@ func NewExecutable(rawCmd string) *Executable {
 func (e *Executable) Format(ctx context.Context, src []byte) ([]byte, error) {
 	if e.skip {
 		return src, nil
+	}
+
+	// This is a special case:
+	// Instead of running the `goimports` as a separate process,
+	// call the `imports` package directly.
+	//
+	// Note(ldez): the `exec.LookPath` is kept inside the NewExecutable constructor,
+	// for compatibility with the existing behavior,
+	// but this can be changed in the future.
+	if e.cmd == defaultFormatter && len(e.args) == 0 {
+		return imports.Process("", src, nil)
 	}
 
 	return e.exec(ctx, src)
