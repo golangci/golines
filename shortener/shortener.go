@@ -36,8 +36,18 @@ type Config struct {
 	ReformatTags    bool   // Whether to reformat struct tags in addition to shortening long lines
 	DotFile         string // Path to write dot-formatted output to (for debugging only)
 	ChainSplitDots  bool   // Whether to split chain methods by putting dots at the ends of lines
+}
 
-	Logger Logger `json:"-"`
+// Options is the type for configuring options of a [Shortener] instance.
+type Options func(*Shortener)
+
+// WithLogger sets the logger to use for a [Shortener] instance.
+func WithLogger(logger Logger) Options {
+	return func(s *Shortener) {
+		if logger != nil {
+			s.logger = logger
+		}
+	}
 }
 
 // Shortener shortens a single go file according to a small set of user style preferences.
@@ -48,14 +58,14 @@ type Shortener struct {
 }
 
 // NewShortener creates a new shortener instance from the provided config.
-func NewShortener(config Config) *Shortener {
+func NewShortener(config Config, opts ...Options) *Shortener {
 	s := &Shortener{
 		config: config,
-		logger: config.Logger,
+		logger: &noopLogger{},
 	}
 
-	if s.config.Logger == nil {
-		s.logger = &noopLogger{}
+	for _, opt := range opts {
+		opt(s)
 	}
 
 	return s
