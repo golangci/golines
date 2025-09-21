@@ -34,7 +34,6 @@ linters:
     - gocognit
     - gocyclo
     - nestif
-    - noctx
 
   settings:
     funlen:
