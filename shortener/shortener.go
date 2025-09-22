@@ -374,16 +374,8 @@ func (s *Shortener) formatDecl(decl dst.Decl) {
 
 // formatFieldList formats a field list in a function declaration.
 func (s *Shortener) formatFieldList(fieldList *dst.FieldList) {
-	for f, field := range fieldList.List {
-		decorations := field.Decorations()
-
-		if f == 0 {
-			decorations.Before = dst.NewLine
-		} else {
-			decorations.Before = dst.None
-		}
-
-		decorations.After = dst.NewLine
+	for i, field := range fieldList.List {
+		formatList(field, i)
 	}
 }
 
@@ -504,15 +496,9 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 		} else {
 			shortenChildArgs := shouldShorten || annotation.HasRecursive(e)
 
-			for a, arg := range e.Args {
+			for i, arg := range e.Args {
 				if shortenChildArgs {
-					if a == 0 {
-						arg.Decorations().Before = dst.NewLine
-					} else {
-						arg.Decorations().After = dst.None
-					}
-
-					arg.Decorations().After = dst.NewLine
+					formatList(arg, i)
 				}
 
 				s.formatExpr(arg, false, isChain)
@@ -630,4 +616,16 @@ func (s *Shortener) createDot(result dst.Node) error {
 	s.logger.Debug("writing dot file output", slog.String("file", s.config.DotFile))
 
 	return graph.CreateDot(result, dotFile)
+}
+
+func formatList(node dst.Node, index int) {
+	decorations := node.Decorations()
+
+	if index == 0 {
+		decorations.Before = dst.NewLine
+	} else {
+		decorations.Before = dst.None
+	}
+
+	decorations.After = dst.NewLine
 }
