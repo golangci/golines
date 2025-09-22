@@ -30,10 +30,8 @@ linters:
     - varnamelen
     - wrapcheck
     ## Temporarily disabled, must be fixed
-    - funlen
     - gocognit
     - gocyclo
-    - nestif
 
   settings:
     funlen:
