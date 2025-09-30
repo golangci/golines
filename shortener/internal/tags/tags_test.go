@@ -90,6 +90,137 @@ func TestFormatStructTags(t *testing.T) {
 			},
 		},
 		{
+			desc: "blocks: ignore annotations (NewLine)",
+			list: []*dst.Field{
+				{
+					Names: []*dst.Ident{{Name: "key"}},
+					Type:  &dst.Ident{Name: "string"},
+					Tag: &dst.BasicLit{
+						Value: "`tagKey1:\"tag value1\" tagKey2:\"tag value2\"   tagKey3:\"tag value3\" `",
+					},
+				},
+				{
+					Names: []*dst.Ident{{Name: "value"}},
+					Type:  &dst.Ident{Name: "string"},
+					Tag: &dst.BasicLit{
+						Value: "`tagKey2:\"value2\" tagKey1:\"value1\"   tagKey3:\"value3\" `",
+					},
+					Decs: dst.FieldDecorations{
+						NodeDecs: dst.NodeDecs{
+							Before: dst.NewLine,
+							Start: []string{
+								"//golines:shorten:132",
+							},
+							End:   []string{},
+							After: dst.NewLine,
+						},
+					},
+				},
+			},
+			expected: []string{
+				"`tagKey1:\"tag value1\" tagKey2:\"tag value2\" tagKey3:\"tag value3\"`",
+				"`tagKey1:\"value1\"     tagKey2:\"value2\"     tagKey3:\"value3\"`",
+			},
+		},
+		{
+			desc: "blocks: block on comment (NewLine)",
+			list: []*dst.Field{
+				{
+					Names: []*dst.Ident{{Name: "key"}},
+					Type:  &dst.Ident{Name: "string"},
+					Tag: &dst.BasicLit{
+						Value: "`tagKey1:\"tag value1\" tagKey2:\"tag value2\"   tagKey3:\"tag value3\" `",
+					},
+				},
+				{
+					Names: []*dst.Ident{{Name: "value"}},
+					Type:  &dst.Ident{Name: "string"},
+					Tag: &dst.BasicLit{
+						Value: "`tagKey2:\"value2\" tagKey1:\"value1\"   tagKey3:\"value3\" `",
+					},
+					Decs: dst.FieldDecorations{
+						NodeDecs: dst.NodeDecs{
+							Before: dst.NewLine,
+							Start: []string{
+								"// Comment",
+								"//golines:shorten:132",
+							},
+							End:   []string{},
+							After: dst.NewLine,
+						},
+					},
+				},
+			},
+			expected: []string{
+				"`tagKey1:\"tag value1\" tagKey2:\"tag value2\" tagKey3:\"tag value3\"`",
+				"`tagKey2:\"value2\" tagKey1:\"value1\" tagKey3:\"value3\"`",
+			},
+		},
+		{
+			desc: "blocks: ignore annotations (EmptyLine)",
+			list: []*dst.Field{
+				{
+					Names: []*dst.Ident{{Name: "key"}},
+					Type:  &dst.Ident{Name: "string"},
+					Tag: &dst.BasicLit{
+						Value: "`tagKey1:\"tag value1\" tagKey2:\"tag value2\"   tagKey3:\"tag value3\" `",
+					},
+				},
+				{
+					Names: []*dst.Ident{{Name: "value"}},
+					Type:  &dst.Ident{Name: "string"},
+					Tag: &dst.BasicLit{
+						Value: "`tagKey2:\"value2\" tagKey1:\"value1\"   tagKey3:\"value3\" `",
+					},
+					Decs: dst.FieldDecorations{
+						NodeDecs: dst.NodeDecs{
+							Before: dst.EmptyLine,
+							Start: []string{
+								"//golines:shorten:132",
+							},
+							End:   []string{},
+							After: dst.NewLine,
+						},
+					},
+				},
+			},
+			expected: []string{
+				"`tagKey1:\"tag value1\" tagKey2:\"tag value2\" tagKey3:\"tag value3\"`",
+				"`tagKey2:\"value2\" tagKey1:\"value1\" tagKey3:\"value3\"`",
+			},
+		},
+		{
+			desc: "blocks: block on empty line (EmptyLine)",
+			list: []*dst.Field{
+				{
+					Names: []*dst.Ident{{Name: "key"}},
+					Type:  &dst.Ident{Name: "string"},
+					Tag: &dst.BasicLit{
+						Value: "`tagKey1:\"tag value1\" tagKey2:\"tag value2\"   tagKey3:\"tag value3\" `",
+					},
+				},
+				{
+					Names: []*dst.Ident{{Name: "value"}},
+					Type:  &dst.Ident{Name: "string"},
+					Tag: &dst.BasicLit{
+						Value: "`tagKey2:\"value2\" tagKey1:\"value1\"   tagKey3:\"value3\" `",
+					},
+					Decs: dst.FieldDecorations{
+						NodeDecs: dst.NodeDecs{
+							Before: dst.EmptyLine,
+							Start:  []string{},
+							End:    []string{},
+							After:  dst.NewLine,
+						},
+					},
+				},
+			},
+			expected: []string{
+				"`tagKey1:\"tag value1\" tagKey2:\"tag value2\" tagKey3:\"tag value3\"`",
+				"`tagKey2:\"value2\" tagKey1:\"value1\" tagKey3:\"value3\"`",
+			},
+		},
+		{
 			desc: "no tags",
 			list: []*dst.Field{
 				{
