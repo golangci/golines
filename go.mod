@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/kingpin/v2 v2.4.0
 	github.com/dave/dst v0.27.3
 	github.com/dave/jennifer v1.7.1
-	github.com/fatih/structtag v1.2.0
+	github.com/ldez/structtags v0.6.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/sync v0.17.0

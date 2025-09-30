@@ -122,7 +122,7 @@ func TestFormatStructTags(t *testing.T) {
 			},
 			expected: []string{
 				"`tagKey1:\"tag \\value1\"`",
-				"`                     parameter:\"BAR\" delimiter:\"\\n\"`",
+				"`                      parameter:\"BAR\" delimiter:\"\\n\"`",
 			},
 		},
 	}
