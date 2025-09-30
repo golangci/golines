@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/dave/dst"
+	"github.com/golangci/golines/shortener/internal/annotation"
 	"github.com/ldez/structtags/parser"
 )
 
@@ -31,10 +32,11 @@ func FormatStructTags(fieldList *dst.FieldList) {
 
 	var blockFields []*dst.Field
 
-	// Divide fields into "blocks" so that we don't do alignments across blank lines
-	for i, field := range fieldList.List {
-		if i == 0 || field.Decorations().Before == dst.EmptyLine {
+	// Divide fields into "blocks" so that we don't do alignments across blank lines and comments.
+	for _, field := range fieldList.List {
+		if isEndFieldsBlock(field) {
 			align(blockFields)
+
 			blockFields = blockFields[:0]
 		}
 
@@ -42,6 +44,13 @@ func FormatStructTags(fieldList *dst.FieldList) {
 	}
 
 	align(blockFields)
+}
+
+func isEndFieldsBlock(field *dst.Field) bool {
+	return field.Decorations().Before == dst.EmptyLine ||
+		slices.ContainsFunc(field.Decorations().Start.All(), func(s string) bool {
+			return !annotation.Is(s)
+		})
 }
 
 // align formats the struct tags within a single field block.
