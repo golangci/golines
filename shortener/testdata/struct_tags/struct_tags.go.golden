@@ -9,7 +9,7 @@ type MyStruct struct {
 	ALongField2 string `json:"long_field2 ãï" info:"something else ãï"                         tag:"a really long tag that extends us beyond 100 chars"`
 	Field3      string `json:"field3"         info:"ãï third thing"`
 	Field4      string `json:"field3"                                                          tag:"ãï something"`
-	Field5      int    `                                                                       tag:"something else"`
+	Field5      int    `                                                                       tag:"something else" tag:"something"`
 	Field6      string `json:"somevalue"      info:"http://username:password@example.com:1234"`
 }
 

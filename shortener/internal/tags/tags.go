@@ -2,13 +2,13 @@ package tags
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/dave/dst"
-	"github.com/fatih/structtag"
+	"github.com/ldez/structtags/parser"
 )
 
 var structTagRegexp = regexp.MustCompile("`([ ]*[a-zA-Z0-9_-]+:\".*\"[ ]*){2,}`")
@@ -32,8 +32,8 @@ func FormatStructTags(fieldList *dst.FieldList) {
 	var blockFields []*dst.Field
 
 	// Divide fields into "blocks" so that we don't do alignments across blank lines
-	for f, field := range fieldList.List {
-		if f == 0 || field.Decorations().Before == dst.EmptyLine {
+	for i, field := range fieldList.List {
+		if i == 0 || field.Decorations().Before == dst.EmptyLine {
 			align(blockFields)
 			blockFields = blockFields[:0]
 		}
@@ -45,6 +45,12 @@ func FormatStructTags(fieldList *dst.FieldList) {
 }
 
 // align formats the struct tags within a single field block.
+// NOTE(ldez): all the code of `align` is not related to shorten,
+// instead of shortening a line, it increases the line length.
+// It must be either:
+// - disabled by default
+// - or the additional spaces should be an option
+// - or maybe removed.
 func align(fields []*dst.Field) {
 	if len(fields) == 0 {
 		return
@@ -87,33 +93,27 @@ func align(fields []*dst.Field) {
 
 		tagValue = tagValue[1 : len(tagValue)-1]
 
-		subTags, err := structtag.Parse(tagValue)
+		entries, err := parser.Tag(tagValue, newFiller())
 		if err != nil {
 			return
 		}
 
-		subTagKeys := subTags.Keys()
-
-		structTag := reflect.StructTag(tagValue)
-
-		for _, key := range subTagKeys {
-			value := structTag.Get(key)
-
+		for _, entry := range entries {
 			// Tag is key, value, and some extra chars (two quotes + one colon)
-			width := len(key) + tagValueLen(value) + 3
+			width := utf8.RuneCountInString(entry.Content)
 
-			if _, ok := maxTagWidths[key]; !ok {
-				maxTagWidths[key] = width
-				tagKeys = append(tagKeys, key)
-			} else if width > maxTagWidths[key] {
-				maxTagWidths[key] = width
+			if _, ok := maxTagWidths[entry.Key]; !ok {
+				maxTagWidths[entry.Key] = width
+				tagKeys = append(tagKeys, entry.Key)
+			} else if width > maxTagWidths[entry.Key] {
+				maxTagWidths[entry.Key] = width
 			}
 
 			if tagKVs[f] == nil {
 				tagKVs[f] = map[string]string{}
 			}
 
-			tagKVs[f][key] = value
+			tagKVs[f][entry.Key] = entry.Content
 		}
 	}
 
@@ -133,12 +133,12 @@ func align(fields []*dst.Field) {
 		}
 
 		for _, key := range tagKeys {
-			value, ok := tagKVs[f][key]
+			content, ok := tagKVs[f][key]
 			lenUsed := 0
 
 			if ok {
-				tagComponents = append(tagComponents, fmt.Sprintf("%s:%q", key, value))
-				lenUsed += len(key) + tagValueLen(value) + 3
+				tagComponents = append(tagComponents, content)
+				lenUsed += utf8.RuneCountInString(content)
 			} else {
 				tagComponents = append(tagComponents, "")
 			}
@@ -150,15 +150,9 @@ func align(fields []*dst.Field) {
 			}
 		}
 
-		updatedTagValue := strings.TrimRight(strings.Join(tagComponents, " "), " ")
-		field.Tag.Value = fmt.Sprintf("`%s`", updatedTagValue)
+		field.Tag.Value = fmt.Sprintf("`%s`",
+			strings.TrimRight(strings.Join(tagComponents, " "), " "))
 	}
-}
-
-// get real tag value's length, fix multibyte character's length,
-// such as `ï` or `中文`.
-func tagValueLen(s string) int {
-	return len([]rune(s))
 }
 
 // getWidth tries to guess the formatted width of a dst node expression.
