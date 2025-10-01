@@ -13,9 +13,9 @@ import (
 
 var structTagRegexp = regexp.MustCompile("`([ ]*[a-zA-Z0-9_-]+:\".*\"[ ]*){2,}`")
 
-// HasMultiKeyTags returns whether the given lines have a multikey struct line.
+// HasMultipleTags returns whether the given lines have a multikey struct line.
 // It's used as an optimization step to avoid unnecessary shortening rounds.
-func HasMultiKeyTags(lines []string) bool {
+func HasMultipleTags(lines []string) bool {
 	return slices.ContainsFunc(lines, structTagRegexp.MatchString)
 }
 

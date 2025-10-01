@@ -107,7 +107,7 @@ func (s *Shortener) Shorten(content []byte) ([]byte, error) {
 
 		if linesToShorten == 0 {
 			if round == 0 {
-				if !s.config.ReformatTags || !tags.HasMultiKeyTags(lines) {
+				if !s.config.ReformatTags || !tags.HasMultipleTags(lines) {
 					stop = true
 				}
 			} else {
