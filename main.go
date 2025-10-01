@@ -22,9 +22,9 @@ import (
 // these values are provided automatically by Goreleaser.
 // ref: https://goreleaser.com/customization/builds/
 var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
+	version = "unknown"
+	commit  = "?"
+	date    = ""
 )
 
 var (
@@ -36,7 +36,7 @@ var (
 		"chain-split-dots",
 		"Split chained methods on the dots as opposed to the arguments").
 		Default("true").Bool()
-	debug = kingpin.Flag(
+	debugFlag = kingpin.Flag(
 		"debug",
 		"Show debug output").Short('d').Default("false").Bool()
 	dotFile = kingpin.Flag(
@@ -89,7 +89,7 @@ var (
 func main() {
 	kingpin.Parse()
 
-	if deref(debug) {
+	if deref(debugFlag) {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
@@ -109,10 +109,7 @@ func main() {
 
 func run(s *sequencer) {
 	if deref(versionFlag) {
-		fmt.Printf( //nolint:forbidigo
-			"golines v%s\n\nbuild information:\n\tbuild date: %s\n\tgit commit ref: %s\n",
-			version, date, commit,
-		)
+		printVersion(os.Stdout)
 
 		return
 	}
