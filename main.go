@@ -279,8 +279,7 @@ func (r *Runner) handleOutput(
 	info fs.FileInfo,
 	rp *reporter,
 ) error {
-	switch {
-	case r.dryRun:
+	if r.dryRun {
 		pretty, err := diff.Pretty(filename, src, res)
 		if err != nil {
 			return err
@@ -291,15 +290,21 @@ func (r *Runner) handleOutput(
 		}
 
 		return nil
+	}
 
-	case r.listFiles:
+	if !r.listFiles && !r.writeOutput {
+		_, _ = rp.Write(res)
+
+		return nil
+	}
+
+	if r.listFiles {
 		if !bytes.Equal(src, res) {
 			_, _ = fmt.Fprintln(rp, filename)
 		}
+	}
 
-		return nil
-
-	case r.writeOutput:
+	if r.writeOutput {
 		if filename == "" {
 			return errors.New("no path to write out to")
 		}
@@ -313,17 +318,11 @@ func (r *Runner) handleOutput(
 		slog.Debug("content changed, writing output", slog.String("path", filename))
 
 		perm := info.Mode().Perm()
-		if err := writeFile(filename, src, res, perm, info.Size()); err != nil {
-			return err
-		}
 
-		return nil
-
-	default:
-		_, _ = rp.Write(res)
-
-		return nil
+		return writeFile(filename, src, res, perm, info.Size())
 	}
+
+	return nil
 }
 
 func deref[T any](v *T) T { //nolint:ireturn
