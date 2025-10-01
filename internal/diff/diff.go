@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pmezard/go-difflib/difflib"
+	rpdiff "github.com/rogpeppe/go-internal/diff"
 	"golang.org/x/term"
 )
 
@@ -23,22 +23,11 @@ func Pretty(path string, content, result []byte) (string, error) {
 		return "", nil
 	}
 
-	diff := difflib.UnifiedDiff{
-		A:        difflib.SplitLines(string(content)),
-		B:        difflib.SplitLines(string(result)),
-		FromFile: path,
-		ToFile:   path + ".shortened",
-		Context:  3,
-	}
-
-	text, err := difflib.GetUnifiedDiffString(diff)
-	if err != nil {
-		return "", err
-	}
+	patch := rpdiff.Diff(path, content, path+".shortened", result)
 
 	var builder strings.Builder
 
-	for line := range strings.Lines(text) {
+	for line := range strings.Lines(string(patch)) {
 		line = strings.TrimRight(line, " ")
 		switch {
 		case !term.IsTerminal(int(os.Stdout.Fd())) && len(line) > 0:
