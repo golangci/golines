@@ -16,9 +16,10 @@ func TestPretty(t *testing.T) {
 	}{
 		{
 			desc:    "simple diff",
-			content: "line 1\nline 2",
-			result:  "line 1\nline 2 modified",
-			expected: `--- example.txt
+			content: "line 1\nline 2\n",
+			result:  "line 1\nline 2 modified\n",
+			expected: `diff example.txt example.txt.shortened
+--- example.txt
 +++ example.txt.shortened
 @@ -1,2 +1,2 @@
  line 1
