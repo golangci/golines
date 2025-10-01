@@ -8,7 +8,7 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	assert.Equal(t, "// __golines:shorten:5", Create(5))
+	assert.Equal(t, "//golines:shorten:5", Create(5))
 }
 
 func TestIs(t *testing.T) {
@@ -19,7 +19,7 @@ func TestIs(t *testing.T) {
 	}{
 		{
 			desc:   "annotation",
-			line:   "// __golines:shorten:5",
+			line:   "//golines:shorten:5",
 			assert: assert.True,
 		},
 		{
@@ -138,12 +138,12 @@ func TestParse(t *testing.T) {
 	}{
 		{
 			desc:     "valid annotation",
-			line:     "// __golines:shorten:5",
+			line:     "//golines:shorten:5",
 			expected: 5,
 		},
 		{
 			desc:     "not a number",
-			line:     "// __golines:shorten:not_a_number",
+			line:     "//golines:shorten:not_a_number",
 			expected: -1,
 		},
 		{
