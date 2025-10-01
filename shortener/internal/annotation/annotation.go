@@ -9,7 +9,7 @@ import (
 	"github.com/dave/dst"
 )
 
-const prefix = "// __golines:shorten:"
+const prefix = "//golines:shorten:"
 
 // Create generates the text of a comment that will annotate long lines.
 func Create(length int) string {
