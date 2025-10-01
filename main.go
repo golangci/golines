@@ -244,7 +244,7 @@ func (r *Runner) processFile(path string, info fs.FileInfo, in io.Reader, rp *re
 		return err
 	}
 
-	if r.ignoreGenerated && r.isGenerated(content) {
+	if r.ignoreGenerated && isGenerated(content) {
 		return nil
 	}
 
