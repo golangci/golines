@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHasMultiKeyTags(t *testing.T) {
+func TestHasMultipleTags(t *testing.T) {
 	testCases := []struct {
 		desc   string
 		lines  []string
@@ -55,7 +55,7 @@ func TestHasMultiKeyTags(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 
-			test.assert(t, HasMultiKeyTags(test.lines))
+			test.assert(t, HasMultipleTags(test.lines))
 		})
 	}
 }
