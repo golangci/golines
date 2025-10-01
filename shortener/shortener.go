@@ -198,7 +198,7 @@ func (s *Shortener) annotateLongLines(lines []string) ([]string, int) {
 				annotatedLines[len(annotatedLines)-1] = annotation.Create(length)
 				linesToShorten++
 			}
-		} else if !s.isComment(line) && length > s.config.MaxLen {
+		} else if !isComment(line) && length > s.config.MaxLen {
 			annotatedLines = append(
 				annotatedLines,
 				annotation.Create(length),
@@ -240,8 +240,8 @@ func (s *Shortener) shortenCommentsFunc(content []byte) []byte {
 
 	lines := strings.SplitSeq(string(content), "\n")
 	for line := range lines {
-		if s.isComment(line) && !annotation.Is(line) &&
-			!s.isDirective(line) &&
+		if isComment(line) && !annotation.Is(line) &&
+			!isDirective(line) &&
 			s.lineLen(line) > s.config.MaxLen {
 			start := strings.Index(line, "//")
 			prefix = line[0:(start + 2)]
@@ -306,16 +306,6 @@ func (s *Shortener) lineLen(line string) int {
 	}
 
 	return length
-}
-
-// isComment determines whether the provided line is a non-block comment.
-func (s *Shortener) isComment(line string) bool {
-	return strings.HasPrefix(strings.Trim(line, " \t"), "//")
-}
-
-// isDirective determines whether the provided line is a directive, e.g., for `go:generate`.
-func (s *Shortener) isDirective(line string) bool {
-	return directivePattern.MatchString(line)
 }
 
 // formatNode formats the provided AST node. The appropriate helper function is called
@@ -485,7 +475,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 		if ok &&
 			s.config.ChainSplitDots &&
 			(shouldShorten || annotation.HasRecursive(e)) &&
-			(isChain || s.chainLength(e) > 1) {
+			(isChain || chainLength(e) > 1) {
 			e.Decorations().After = dst.NewLine
 
 			for _, arg := range e.Args {
@@ -583,28 +573,6 @@ func (s *Shortener) formatSpec(spec dst.Spec, force bool) {
 	}
 }
 
-// chainLength determines the length of the function call chain in an expression.
-func (s *Shortener) chainLength(callExpr *dst.CallExpr) int {
-	numCalls := 1
-	currCall := callExpr
-
-	for {
-		selectorExpr, ok := currCall.Fun.(*dst.SelectorExpr)
-		if !ok {
-			break
-		}
-
-		currCall, ok = selectorExpr.X.(*dst.CallExpr)
-		if !ok {
-			break
-		}
-
-		numCalls++
-	}
-
-	return numCalls
-}
-
 func (s *Shortener) createDot(result dst.Node) error {
 	dotFile, err := os.Create(s.config.DotFile)
 	if err != nil {
@@ -628,4 +596,36 @@ func formatList(node dst.Node, index int) {
 	}
 
 	decorations.After = dst.NewLine
+}
+
+// chainLength determines the length of the function call chain in an expression.
+func chainLength(callExpr *dst.CallExpr) int {
+	numCalls := 1
+	currCall := callExpr
+
+	for {
+		selectorExpr, ok := currCall.Fun.(*dst.SelectorExpr)
+		if !ok {
+			break
+		}
+
+		currCall, ok = selectorExpr.X.(*dst.CallExpr)
+		if !ok {
+			break
+		}
+
+		numCalls++
+	}
+
+	return numCalls
+}
+
+// isComment determines whether the provided line is a non-block comment.
+func isComment(line string) bool {
+	return strings.HasPrefix(strings.Trim(line, " \t"), "//")
+}
+
+// isDirective determines whether the provided line is a directive, e.g., for `go:generate`.
+func isDirective(line string) bool {
+	return directivePattern.MatchString(line)
 }
