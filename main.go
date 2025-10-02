@@ -13,8 +13,8 @@ import (
 	"strings"
 
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/segmentio/golines/internal/diff"
-	"github.com/segmentio/golines/shortener"
+	"github.com/golangci/golines/internal/diff"
+	"github.com/golangci/golines/shortener"
 )
 
 // these values are provided automatically by Goreleaser.

@@ -15,9 +15,9 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
-	"github.com/segmentio/golines/shortener/internal/annotation"
-	"github.com/segmentio/golines/shortener/internal/graph"
-	"github.com/segmentio/golines/shortener/internal/tags"
+	"github.com/golangci/golines/shortener/internal/annotation"
+	"github.com/golangci/golines/shortener/internal/graph"
+	"github.com/golangci/golines/shortener/internal/tags"
 )
 
 var (

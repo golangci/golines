@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/dave/dst"
-	"github.com/segmentio/golines/shortener/internal/annotation"
+	"github.com/golangci/golines/shortener/internal/annotation"
 )
 
 // Node is a representation of a node in the AST graph.
