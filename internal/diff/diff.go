@@ -18,18 +18,18 @@ const (
 )
 
 // Pretty prints colored, git-style diffs to the console.
-func Pretty(path string, content, result []byte) (string, error) {
+func Pretty(path string, content, result []byte) []byte {
 	if bytes.Equal(content, result) {
-		return "", nil
+		return nil
 	}
 
 	patch := rpdiff.Diff(path, content, path+".shortened", result)
 
 	if !term.IsTerminal(int(os.Stdout.Fd())) {
-		return string(patch), nil
+		return patch
 	}
 
-	var builder strings.Builder
+	var builder bytes.Buffer
 
 	for line := range strings.Lines(string(patch)) {
 		switch {
@@ -49,5 +49,5 @@ func Pretty(path string, content, result []byte) (string, error) {
 
 	_, _ = fmt.Fprintln(&builder)
 
-	return builder.String(), nil
+	return builder.Bytes()
 }

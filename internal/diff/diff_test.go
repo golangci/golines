@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestPretty(t *testing.T) {
@@ -39,10 +38,9 @@ func TestPretty(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 
-			output, err := Pretty("example.txt", []byte(test.content), []byte(test.result))
-			require.NoError(t, err)
+			output := Pretty("example.txt", []byte(test.content), []byte(test.result))
 
-			assert.Equal(t, test.expected, output)
+			assert.Equal(t, test.expected, string(output))
 		})
 	}
 }
