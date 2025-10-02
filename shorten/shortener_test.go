@@ -1,4 +1,4 @@
-package shortener
+package shorten
 
 import (
 	"bytes"
@@ -38,7 +38,7 @@ func TestShortener(t *testing.T) {
 				file,
 			)
 
-			shortenedContent, err := shortener.Shorten(content)
+			shortenedContent, err := shortener.Process(content)
 			require.NoError(t, err)
 
 			expectedPath := strings.TrimSuffix(file, filepath.Ext(file)) + ".go.golden"

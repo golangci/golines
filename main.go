@@ -16,7 +16,7 @@ import (
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/golangci/golines/internal/diff"
 	"github.com/golangci/golines/internal/formatter"
-	"github.com/golangci/golines/shortener"
+	"github.com/golangci/golines/shorten"
 )
 
 // these values are provided automatically by Goreleaser.
@@ -143,13 +143,13 @@ type Runner struct {
 	listFiles       bool
 	writeOutput     bool
 
-	shortener *shortener.Shortener
+	shortener *shorten.Shortener
 
 	extraFormatter *formatter.Executable
 }
 
 func NewRunner() *Runner {
-	config := shortener.Config{
+	config := shorten.Config{
 		MaxLen:          deref(maxLen),
 		TabLen:          deref(tabLen),
 		KeepAnnotations: deref(keepAnnotations),
@@ -167,7 +167,7 @@ func NewRunner() *Runner {
 		listFiles:       deref(listFiles),
 		writeOutput:     deref(writeOutput),
 
-		shortener:      shortener.NewShortener(config, shortener.WithLogger(slog.Default())),
+		shortener:      shorten.NewShortener(config, shorten.WithLogger(slog.Default())),
 		extraFormatter: formatter.NewExecutable(deref(baseFormatterCmd)),
 	}
 }
@@ -254,7 +254,7 @@ func (r *Runner) processFile(path string, info fs.FileInfo, in io.Reader, rp *re
 		return err
 	}
 
-	result, err = r.shortener.Shorten(result)
+	result, err = r.shortener.Process(result)
 	if err != nil {
 		return err
 	}

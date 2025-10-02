@@ -16,7 +16,7 @@ regenerate:
 
 .PHONY: graph
 graph:
-	go run ./shortener/internal/generate/
+	go run ./shorten/internal/generate/
 
 .PHONY: check
 check:

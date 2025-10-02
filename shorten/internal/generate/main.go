@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	err := genNodeToGraphNode("shortener/internal/graph/graph_generated.go")
+	err := genNodeToGraphNode("shorten/internal/graph/graph_generated.go")
 	if err != nil {
 		log.Fatal(err)
 	}
