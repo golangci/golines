@@ -1,4 +1,4 @@
-package shortener
+package shorten
 
 import (
 	"bytes"
@@ -13,9 +13,9 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
-	"github.com/golangci/golines/shortener/internal/annotation"
-	"github.com/golangci/golines/shortener/internal/graph"
-	"github.com/golangci/golines/shortener/internal/tags"
+	"github.com/golangci/golines/shorten/internal/annotation"
+	"github.com/golangci/golines/shorten/internal/graph"
+	"github.com/golangci/golines/shorten/internal/tags"
 )
 
 // Go directive (should be ignored).
@@ -84,8 +84,8 @@ func NewShortener(config Config, opts ...Options) *Shortener {
 	return s
 }
 
-// Shorten shortens the provided golang file content bytes.
-func (s *Shortener) Shorten(content []byte) ([]byte, error) {
+// Process shortens the provided golang file content bytes.
+func (s *Shortener) Process(content []byte) ([]byte, error) {
 	var round int
 
 	var err error
@@ -136,7 +136,7 @@ func (s *Shortener) Shorten(content []byte) ([]byte, error) {
 			}
 		}
 
-		// Shorten the file starting at the top-level declarations
+		// Process the file starting at the top-level declarations
 		for _, decl := range result.Decls {
 			s.formatNode(decl)
 		}

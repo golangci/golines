@@ -46,8 +46,8 @@ More background and technical details are available in [this blog post](https://
 
 ## Examples
 
-See this [before](/shortener/testdata/end_to_end/end_to_end.go) and [after](/shortener/testdata/end_to_end/end_to_end.go.golden) view of a file with very long lines.
-More example pairs can be found in the [`testdata`](/shortener/testdata) directory.
+See this [before](/shorten/testdata/end_to_end/end_to_end.go) and [after](/shorten/testdata/end_to_end/end_to_end.go.golden) view of a file with very long lines.
+More example pairs can be found in the [`testdata`](/shorten/testdata) directory.
 
 ## Version support
 
@@ -143,8 +143,8 @@ The original behavior can be used by running the tool with the
 #### Struct tag reformatting
 
 In addition to shortening long lines, the tool also aligns struct tag keys;
-see the associated [before](shortener/testdata/struct_tags/struct_tags.go) 
-and [after](shortener/testdata/struct_tags/struct_tags.go.golden)
+see the associated [before](shorten/testdata/struct_tags/struct_tags.go) 
+and [after](shorten/testdata/struct_tags/struct_tags.go.golden)
 examples in the `testdata` directory.
 To turn this behavior off, run with `--no-reformat-tags`.
 

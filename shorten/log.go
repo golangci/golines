@@ -1,4 +1,4 @@
-package shortener
+package shorten
 
 type Logger interface {
 	Debug(msg string, args ...any)
