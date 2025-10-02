@@ -25,7 +25,6 @@ func TestPretty(t *testing.T) {
  line 1
 -line 2
 +line 2 modified
-
 `,
 		},
 		{
