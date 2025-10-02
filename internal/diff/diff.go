@@ -25,20 +25,24 @@ func Pretty(path string, content, result []byte) (string, error) {
 
 	patch := rpdiff.Diff(path, content, path+".shortened", result)
 
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
+		return string(patch), nil
+	}
+
 	var builder strings.Builder
 
 	for line := range strings.Lines(string(patch)) {
-		line = strings.TrimRight(line, " ")
 		switch {
-		case !term.IsTerminal(int(os.Stdout.Fd())) && len(line) > 0:
-			_, _ = fmt.Fprint(&builder, line)
 		case strings.HasPrefix(line, "+"):
 			_, _ = fmt.Fprint(&builder, ansiGreen, line, ansiEnd)
+
 		case strings.HasPrefix(line, "-"):
 			_, _ = fmt.Fprint(&builder, ansiRed, line, ansiEnd)
+
 		case strings.HasPrefix(line, "^"):
 			_, _ = fmt.Fprint(&builder, ansiBlue, line, ansiEnd)
-		case len(line) > 0:
+
+		default:
 			_, _ = fmt.Fprintf(&builder, "%s", line)
 		}
 	}
