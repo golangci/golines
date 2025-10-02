@@ -279,29 +279,18 @@ func (r *Runner) handleOutput(
 	info fs.FileInfo,
 	rp *reporter,
 ) error {
-	if r.dryRun {
-		pretty, err := diff.Pretty(filename, src, res)
-		if err != nil {
-			return err
-		}
-
-		if len(pretty) > 0 {
-			_, _ = rp.Write([]byte(pretty))
-		}
-
-		return nil
+	if !r.listFiles && !r.writeOutput && !r.dryRun {
+		_, _ = rp.Write(res)
 	}
 
-	if !r.listFiles && !r.writeOutput {
-		_, _ = rp.Write(res)
+	if bytes.Equal(src, res) {
+		slog.Debug("content unchanged, skipping write")
 
 		return nil
 	}
 
 	if r.listFiles {
-		if !bytes.Equal(src, res) {
-			_, _ = fmt.Fprintln(rp, filename)
-		}
+		_, _ = fmt.Fprintln(rp, filename)
 	}
 
 	if r.writeOutput {
@@ -309,17 +298,15 @@ func (r *Runner) handleOutput(
 			return errors.New("no path to write out to")
 		}
 
-		if bytes.Equal(src, res) {
-			slog.Debug("content unchanged, skipping write")
-
-			return nil
-		}
-
 		slog.Debug("content changed, writing output", slog.String("path", filename))
 
-		perm := info.Mode().Perm()
+		return writeFile(filename, src, res, info.Mode().Perm(), info.Size())
+	}
 
-		return writeFile(filename, src, res, perm, info.Size())
+	if r.dryRun {
+		_, _ = rp.Write(diff.Pretty(filename, src, res))
+
+		return nil
 	}
 
 	return nil
