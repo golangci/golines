@@ -149,7 +149,7 @@ type Runner struct {
 }
 
 func NewRunner() *Runner {
-	config := shorten.Config{
+	config := &shorten.Config{
 		MaxLen:          deref(maxLen),
 		TabLen:          deref(tabLen),
 		KeepAnnotations: deref(keepAnnotations),
