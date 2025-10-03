@@ -39,8 +39,8 @@ type Config struct {
 }
 
 // NewDefaultConfig returns a [Config] with default values.
-func NewDefaultConfig() Config {
-	return Config{
+func NewDefaultConfig() *Config {
+	return &Config{
 		MaxLen:          100,
 		TabLen:          4,
 		KeepAnnotations: false,
@@ -54,7 +54,7 @@ func NewDefaultConfig() Config {
 // Options is the type for configuring options of a [Shortener] instance.
 type Options func(*Shortener)
 
-// WithLogger sets the logger to use for a [Shortener] instance.
+// WithLogger sets the logger to use it for a [Shortener] instance.
 func WithLogger(logger Logger) Options {
 	return func(s *Shortener) {
 		if logger != nil {
@@ -65,13 +65,17 @@ func WithLogger(logger Logger) Options {
 
 // Shortener shortens a single go file according to a small set of user style preferences.
 type Shortener struct {
-	config Config
+	config *Config
 
 	logger Logger
 }
 
 // NewShortener creates a new shortener instance from the provided config.
-func NewShortener(config Config, opts ...Options) *Shortener {
+func NewShortener(config *Config, opts ...Options) *Shortener {
+	if config == nil {
+		config = NewDefaultConfig()
+	}
+
 	s := &Shortener{
 		config: config,
 		logger: &noopLogger{},

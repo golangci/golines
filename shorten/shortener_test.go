@@ -59,7 +59,7 @@ func TestShortener(t *testing.T) {
 
 			assert.Equal(t, string(expectedContent), string(shortenedContent))
 
-			if config.DotFile != "" {
+			if config != nil && config.DotFile != "" {
 				expectedDotFile := strings.TrimSuffix(file, filepath.Ext(file)) + ".dot"
 
 				dotFileContent, err := os.ReadFile(config.DotFile)
@@ -82,12 +82,12 @@ func TestShortener(t *testing.T) {
 	}
 }
 
-func loadTestCases(t *testing.T) map[string]Config {
+func loadTestCases(t *testing.T) map[string]*Config {
 	t.Helper()
 
 	dotDir := t.TempDir()
 
-	testCases := map[string]Config{}
+	testCases := map[string]*Config{}
 
 	err := filepath.WalkDir(testdataDir, func(file string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -123,9 +123,9 @@ func loadTestCases(t *testing.T) map[string]Config {
 		err = tmpl.Execute(buf, data)
 		require.NoError(t, err, cfgFile)
 
-		cfg := Config{}
+		cfg := &Config{}
 
-		err = json.Unmarshal(buf.Bytes(), &cfg) //nolint:musttag
+		err = json.Unmarshal(buf.Bytes(), cfg) //nolint:musttag
 		require.NoError(t, err, cfgFile)
 
 		testCases[file] = cfg
