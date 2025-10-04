@@ -345,17 +345,17 @@ func (s *Shortener) formatNode(node dst.Node) {
 func (s *Shortener) formatDecl(decl dst.Decl) {
 	switch d := decl.(type) {
 	case *dst.FuncDecl:
-		if annotation.HasRecursive(decl) {
-			if d.Type != nil && d.Type.Params != nil {
-				s.formatFieldList(d.Type.Params)
-			}
+		if d.Type != nil && d.Type.Params != nil && annotation.HasRecursive(d) {
+			s.formatFieldList(d.Type.Params)
 		}
 
 		s.formatStmt(d.Body)
 
 	case *dst.GenDecl:
+		shouldShorten := annotation.Has(d)
+
 		for _, spec := range d.Specs {
-			s.formatSpec(spec, annotation.Has(decl))
+			s.formatSpec(spec, shouldShorten)
 		}
 
 	default:
@@ -376,8 +376,9 @@ func (s *Shortener) formatFieldList(fieldList *dst.FieldList) {
 // formatStmt formats an AST statement node. Among other examples, these include assignments,
 // case clauses, for statements, if statements, and select statements.
 func (s *Shortener) formatStmt(stmt dst.Stmt) {
-	// Explicitly check for nil statements
 	stmtType := reflect.TypeOf(stmt)
+
+	// Explicitly check for nil statements
 	if reflect.ValueOf(stmt) == reflect.Zero(stmtType) {
 		return
 	}
@@ -399,6 +400,7 @@ func (s *Shortener) formatStmt(stmt dst.Stmt) {
 		if shouldShorten {
 			for _, arg := range st.List {
 				arg.Decorations().After = dst.NewLine
+
 				s.formatExpr(arg, false, false)
 			}
 		}
@@ -474,12 +476,12 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 		}
 
 	case *dst.CallExpr:
+		shortenChildArgs := shouldShorten || annotation.HasRecursive(e)
+
 		_, ok := e.Fun.(*dst.SelectorExpr)
 
-		if ok &&
-			s.config.ChainSplitDots &&
-			(shouldShorten || annotation.HasRecursive(e)) &&
-			(isChain || chainLength(e) > 1) {
+		if ok && shortenChildArgs &&
+			s.config.ChainSplitDots && (isChain || chainLength(e) > 1) {
 			e.Decorations().After = dst.NewLine
 
 			for _, arg := range e.Args {
@@ -488,8 +490,6 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 
 			s.formatExpr(e.Fun, shouldShorten, true)
 		} else {
-			shortenChildArgs := shouldShorten || annotation.HasRecursive(e)
-
 			for i, arg := range e.Args {
 				if shortenChildArgs {
 					formatList(arg, i)
@@ -558,6 +558,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 // formatSpec formats an AST spec node. These include type specifications, among other things.
 func (s *Shortener) formatSpec(spec dst.Spec, force bool) {
 	shouldShorten := annotation.Has(spec) || force
+
 	switch sp := spec.(type) {
 	case *dst.ValueSpec:
 		for _, expr := range sp.Values {
