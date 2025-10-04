@@ -38,20 +38,15 @@ func HasTail(node dst.Node) bool {
 // HasRecursive determines whether the given node or one of its children has a
 // golines annotation on it. It's currently implemented for function declarations, fields,
 // call expressions, and selector expressions only.
-func HasRecursive(node dst.Node) bool {
+func HasRecursive[T dst.Node](node T) bool {
 	if Has(node) {
 		return true
 	}
 
-	switch n := node.(type) {
+	switch n := any(node).(type) {
 	case *dst.FuncDecl:
-		if n.Type != nil && n.Type.Params != nil {
-			for _, item := range n.Type.Params.List {
-				if HasRecursive(item) {
-					return true
-				}
-			}
-		}
+		return n.Type != nil && n.Type.Params != nil &&
+			HasRecursive(n.Type.Params)
 
 	case *dst.Field:
 		return HasTail(n) || HasRecursive(n.Type)
@@ -60,20 +55,13 @@ func HasRecursive(node dst.Node) bool {
 		return Has(n.Sel) || Has(n.X)
 
 	case *dst.CallExpr:
-		if HasRecursive(n.Fun) {
-			return true
-		}
-
-		if slices.ContainsFunc(n.Args, Has) {
-			return true
-		}
+		return HasRecursive(n.Fun) || slices.ContainsFunc(n.Args, Has)
 
 	case *dst.InterfaceType:
-		for _, field := range n.Methods.List {
-			if HasRecursive(field) {
-				return true
-			}
-		}
+		return HasRecursive(n.Methods)
+
+	case *dst.FieldList:
+		return slices.ContainsFunc(n.List, HasRecursive)
 	}
 
 	return false
