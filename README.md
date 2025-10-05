@@ -1,11 +1,13 @@
-[![golines test](https://github.com/golangci/golines/actions/workflows/test.yml/badge.svg)](https://github.com/golangci/golines/actions/workflows/test.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/golangci/golines)](https://goreportcard.com/report/github.com/golangci/golines)
-[![GoDoc](https://godoc.org/github.com/golangci/golines?status.svg)](https://godoc.org/github.com/golangci/golines)
-
-# golines
+<div align="center">
+  <img alt="golines logo" src=".assets/golines-logo.svg">
+</div>
 
 Golines is a Go code formatter that shortens long lines,
 in addition to all the formatting fixes done by [`gofmt`](https://golang.org/cmd/gofmt/).
+
+[![golines test](https://github.com/golangci/golines/actions/workflows/test.yml/badge.svg)](https://github.com/golangci/golines/actions/workflows/test.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/golangci/golines)](https://goreportcard.com/report/github.com/golangci/golines)
+[![GoDoc](https://godoc.org/github.com/golangci/golines?status.svg)](https://godoc.org/github.com/golangci/golines)
 
 ## History
 
