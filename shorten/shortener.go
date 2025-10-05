@@ -326,7 +326,7 @@ func (s *Shortener) formatNode(node dst.Node) {
 
 	case dst.Stmt:
 		s.logger.Debug("processing statement", slog.Any("node", n))
-		s.formatStmt(n)
+		s.formatStmt(n, false)
 
 	case dst.Spec:
 		s.logger.Debug("processing spec", slog.Any("node", n))
@@ -349,7 +349,7 @@ func (s *Shortener) formatDecl(decl dst.Decl) {
 			s.formatFieldList(d.Type.Params)
 		}
 
-		s.formatStmt(d.Body)
+		s.formatStmt(d.Body, false)
 
 	case *dst.GenDecl:
 		shouldShorten := annotation.Has(d)
@@ -375,7 +375,7 @@ func (s *Shortener) formatFieldList(fieldList *dst.FieldList) {
 
 // formatStmt formats an AST statement node. Among other examples, these include assignments,
 // case clauses, for statements, if statements, and select statements.
-func (s *Shortener) formatStmt(stmt dst.Stmt) {
+func (s *Shortener) formatStmt(stmt dst.Stmt, force bool) {
 	stmtType := reflect.TypeOf(stmt)
 
 	// Explicitly check for nil statements
@@ -383,7 +383,7 @@ func (s *Shortener) formatStmt(stmt dst.Stmt) {
 		return
 	}
 
-	shouldShorten := annotation.Has(stmt)
+	shouldShorten := force || annotation.Has(stmt)
 
 	switch st := stmt.(type) {
 	case *dst.AssignStmt:
@@ -393,7 +393,7 @@ func (s *Shortener) formatStmt(stmt dst.Stmt) {
 
 	case *dst.BlockStmt:
 		for _, stmt := range st.List {
-			s.formatStmt(stmt)
+			s.formatStmt(stmt, false)
 		}
 
 	case *dst.CaseClause:
@@ -406,12 +406,12 @@ func (s *Shortener) formatStmt(stmt dst.Stmt) {
 		}
 
 		for _, stmt := range st.Body {
-			s.formatStmt(stmt)
+			s.formatStmt(stmt, false)
 		}
 
 	case *dst.CommClause:
 		for _, stmt := range st.Body {
-			s.formatStmt(stmt)
+			s.formatStmt(stmt, false)
 		}
 
 	case *dst.DeclStmt:
@@ -424,17 +424,21 @@ func (s *Shortener) formatStmt(stmt dst.Stmt) {
 		s.formatExpr(st.X, shouldShorten, false)
 
 	case *dst.ForStmt:
-		s.formatStmt(st.Body)
+		s.formatStmt(st.Body, false)
 
 	case *dst.GoStmt:
 		s.formatExpr(st.Call, shouldShorten, false)
 
 	case *dst.IfStmt:
 		s.formatExpr(st.Cond, shouldShorten, false)
-		s.formatStmt(st.Body)
+		s.formatStmt(st.Body, false)
+
+		if st.Init != nil {
+			s.formatStmt(st.Init, shouldShorten)
+		}
 
 	case *dst.RangeStmt:
-		s.formatStmt(st.Body)
+		s.formatStmt(st.Body, false)
 
 	case *dst.ReturnStmt:
 		for _, expr := range st.Results {
@@ -442,10 +446,10 @@ func (s *Shortener) formatStmt(stmt dst.Stmt) {
 		}
 
 	case *dst.SelectStmt:
-		s.formatStmt(st.Body)
+		s.formatStmt(st.Body, false)
 
 	case *dst.SwitchStmt:
-		s.formatStmt(st.Body)
+		s.formatStmt(st.Body, false)
 
 	default:
 		if shouldShorten {
@@ -517,7 +521,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 		}
 
 	case *dst.FuncLit:
-		s.formatStmt(e.Body)
+		s.formatStmt(e.Body, false)
 
 	case *dst.FuncType:
 		if shouldShorten {
