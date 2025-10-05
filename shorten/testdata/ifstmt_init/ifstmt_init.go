@@ -1,0 +1,7 @@
+package testdata
+
+func _() {
+	if err := veryLongFunctionWithManyLongArguments(veryLongArgument1, veryLongArgument2, veryLongArgument3, veryLongArgument4, veryLongArgument5); err != nil {
+		// ... ... ...
+	}
+}
