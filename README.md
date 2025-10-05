@@ -13,59 +13,21 @@ This repository is a fork of [segmentio/golines](https://github.com/segmentio/go
 
 The original repository will probably be archived in Q4 2025.
 
-## Motivation
-
-The standard Go formatting tools (`gofmt`, `goimports`, etc.) are great, but
-[deliberately don't shorten long lines](https://github.com/golang/go/issues/11915);
-instead, this is an activity left to developers.
-
-While there are different tastes when it comes to line lengths in go, we've generally found
-that very long lines are more difficult to read than their shortened alternatives.
-As an example:
-
-```go
-myMap := map[string]string{"first key": "first value", "second key": "second value", "third key": "third value", "fourth key": "fourth value", "fifth key": "fifth value"}
-```
-
-vs.
-
-```go
-myMap := map[string]string{
-	"first key": "first value",
-	"second key": "second value",
-	"third key": "third value",
-	"fourth key": "fourth value",
-	"fifth key": "fifth value",
-}
-```
-
-We built `golines` to give Go developers the option to automatically shorten long lines,
-like the one above, according to their preferences.
-
-More background and technical details are available in [this blog post](https://yolken.net/blog/cleaner-go-code-golines).
-
-## Examples
-
-See this [before](/shorten/testdata/end_to_end/end_to_end.go) and [after](/shorten/testdata/end_to_end/end_to_end.go.golden) view of a file with very long lines.
-More example pairs can be found in the [`testdata`](/shorten/testdata) directory.
-
-## Version support
-
-The [minimum version](https://go.dev/ref/mod#go-mod-file-go) in [`go.mod`](/go.mod)
-is the minimum required version of Go for any given version of `golines.`
-
 ## Usage
 
 First, install the tool:
 
-```text
+```bash
 go install github.com/golangci/golines@latest
 ```
 
 Then, run:
 
-```text
-golines [paths to format]
+```bash
+golines .
+
+# or to write the files in place:
+golines -w .
 ```
 
 The paths can be either directories or individual files.
@@ -195,9 +157,46 @@ let g:go_fmt_options = {
 4. Confirm by clicking OK
 5. Activate your newly created file watcher in the Goland settings under "Tools" -> "Actions on save"
 
-### Others
+## Version support
 
-Coming soon.
+The [minimum version](https://go.dev/ref/mod#go-mod-file-go) in [`go.mod`](/go.mod)
+is the minimum required version of Go for any given version of `golines.`
+
+## Motivation
+
+The standard Go formatting tools (`gofmt`, `goimports`, etc.) are great, but
+[deliberately don't shorten long lines](https://github.com/golang/go/issues/11915);
+instead, this is an activity left to developers.
+
+While there are different tastes when it comes to line lengths in go, we've generally found
+that very long lines are more difficult to read than their shortened alternatives.
+As an example:
+
+```go
+myMap := map[string]string{"first key": "first value", "second key": "second value", "third key": "third value", "fourth key": "fourth value", "fifth key": "fifth value"}
+```
+
+vs.
+
+```go
+myMap := map[string]string{
+	"first key": "first value",
+	"second key": "second value",
+	"third key": "third value",
+	"fourth key": "fourth value",
+	"fifth key": "fifth value",
+}
+```
+
+We built `golines` to give Go developers the option to automatically shorten long lines,
+like the one above, according to their preferences.
+
+More background and technical details are available in [this blog post](https://yolken.net/blog/cleaner-go-code-golines).
+
+## Examples
+
+See this [before](/shorten/testdata/end_to_end/end_to_end.go) and [after](/shorten/testdata/end_to_end/end_to_end.go.golden) view of a file with very long lines.
+More example pairs can be found in the [`testdata`](/shorten/testdata) directory.
 
 ## How It Works
 
