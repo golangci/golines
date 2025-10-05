@@ -36,6 +36,17 @@ If no paths are provided, then input is taken from `stdin` (as with `gofmt`).
 By default, the results are printed to `stdout`.
 To overwrite the existing files in place, use the `-w` flag.
 
+## Examples
+
+See this [before](/shorten/testdata/end_to_end/end_to_end.go) and [after](/shorten/testdata/end_to_end/end_to_end.go.golden) view of a file with very long lines.
+More example pairs can be found in the [`testdata`](/shorten/testdata) directory.
+
+## Limitations
+
+The tool has been tested on a variety of inputs, but it's not perfect.
+Among other examples, the handling of long lines in comments could be improved.
+If you see anything particularly egregious, please report it via an issue.
+
 ## Options
 
 Some other options are described in the sections below.
@@ -47,11 +58,11 @@ By default, the tool tries to shorten lines that are longer than 100 columns
 and assumes that 1 tab = 4 columns.
 The latter can be changed via the `-m` and `-t` flags respectively.
 
-#### Dry-run mode
+### Dry-run mode
 
 Running the tool with the `--dry-run` flag will show pretty, git-style diffs.
 
-#### Comment shortening
+### Comment shortening
 
 Shortening long comment lines is harder than shortening code
 because comments can have arbitrary structure and format.
@@ -59,19 +70,19 @@ because comments can have arbitrary structure and format.
 but this is turned off by default since the quality isn't great.
 To enable this feature anyway, run with the `--shorten-comments` flag.
 
-#### Custom formatters
+### Custom formatters
 
 By default, the tool will use [`goimports`](https://godoc.org/golang.org/x/tools/cmd/goimports)
 as the base formatter (if found), otherwise it will revert to `gofmt`.
 An explicit formatter can be set via the `--base-formatter` flag;
 the command provided here should accept its input via `stdin` and write its output to `stdout`.
 
-#### Generated files
+### Generated files
 
 By default, the tool will not format any files that look like they're generated.
 If you want to reformat these too, run with the flag `--ignore-generated=false`.
 
-#### Chained method splitting
+### Chained method splitting
 
 There are several possible ways to split lines that are part of
 [method chains](https://en.wikipedia.org/wiki/Method_chaining).
@@ -102,7 +113,7 @@ myObj.Method(arg1, arg2, arg3).
 The original behavior can be used by running the tool with the
 `--no-chain-split-dots` flag.
 
-#### Struct tag reformatting
+### Struct tag reformatting
 
 In addition to shortening long lines, the tool also aligns struct tag keys;
 see the associated [before](shorten/testdata/struct_tags/struct_tags.go) 
@@ -193,11 +204,6 @@ like the one above, according to their preferences.
 
 More background and technical details are available in [this blog post](https://yolken.net/blog/cleaner-go-code-golines).
 
-## Examples
-
-See this [before](/shorten/testdata/end_to_end/end_to_end.go) and [after](/shorten/testdata/end_to_end/end_to_end.go.golden) view of a file with very long lines.
-More example pairs can be found in the [`testdata`](/shorten/testdata) directory.
-
 ## How It Works
 
 For each input source file, `golines` runs through the following process:
@@ -217,9 +223,3 @@ For each input source file, `golines` runs through the following process:
   `stdout` or the source file
 
 See [this blog post](https://yolken.net/blog/cleaner-go-code-golines) for more technical details.
-
-## Limitations
-
-The tool has been tested on a variety of inputs, but it's not perfect.
-Among other examples, the handling of long lines in comments could be improved.
-If you see anything particularly egregious, please report it via an issue.
