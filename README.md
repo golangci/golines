@@ -5,7 +5,7 @@
 # golines
 
 Golines is a Go code formatter that shortens long lines,
-in addition to all of the formatting fixes done by [`gofmt`](https://golang.org/cmd/gofmt/).
+in addition to all the formatting fixes done by [`gofmt`](https://golang.org/cmd/gofmt/).
 
 ## History
 
@@ -125,23 +125,23 @@ let g:go_fmt_options = {
 
 ### Visual Studio Code
 
-1. Install the [Run on Save](https://marketplace.visualstudio.com/items?itemName=emeraldwalk.RunOnSave) extension
-2. Go into the VSCode settings menu, scroll down to the section for the "Run on Save"
-  extension, click the "Edit in settings.json" link
-3. Set the `emeraldwalk.runonsave` key as follows
-   (adding other flags to the `golines` command as desired):
-```
-    "emeraldwalk.runonsave": {
-        "commands": [
-            {
-                "match": "\\.go$",
-                "cmd": "golines ${file} -w"
-            }
-        ]
-    }
-```
-
-1. Save the settings and restart VSCode
+1. Install the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.Go).
+2. Edit the `settings.json` file by opening it in the editor with the Preferences: `Open User Settings (JSON)` or `Preferences: Open Workspace Settings (JSON)` command in the Command Palette (`Ctrl+Shift+P`).
+3. Add the following lines:
+    ```json
+        "go.formatTool": "custom",
+        "go.alternateTools": {
+            "customFormatter": "golines"
+        }
+4. Optional: to define custom arguments for the formatter, add the following lines:
+    ```json
+        "go.formatTool": "custom",
+        "go.formatFlags": ["-m", "128"],
+        "go.alternateTools": {
+            "customFormatter": "golines"
+        }
+    ```
+5. Save the settings and restart VSCode
 
 ### Goland
 
