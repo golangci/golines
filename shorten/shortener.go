@@ -29,13 +29,26 @@ const maxRounds = 20
 
 // Config stores the configuration options exposed by a Shortener instance.
 type Config struct {
-	MaxLen          int    // Max target width for each line
-	TabLen          int    // Width of a tab character
-	KeepAnnotations bool   // Whether to keep annotations in the final result (for debugging only)
-	ShortenComments bool   // Whether to shorten comments
-	ReformatTags    bool   // Whether to reformat struct tags in addition to shortening long lines
-	DotFile         string // Path to write dot-formatted output to (for debugging only)
-	ChainSplitDots  bool   // Whether to split chain methods by putting dots at the ends of lines
+	// MaxLen Max target width for each line
+	MaxLen int
+
+	// TabLen Width of a tab character
+	TabLen int
+
+	// KeepAnnotations Whether to keep annotations in the final result (for debugging only)
+	KeepAnnotations bool
+
+	// ShortenComments Whether to shorten comments
+	ShortenComments bool
+
+	// ReformatTags Whether to reformat struct tags in addition to shortening long lines
+	ReformatTags bool
+
+	// DotFile Path to write dot-formatted output to (for debugging only)
+	DotFile string
+
+	// ChainSplitDots Whether to split chain methods by putting dots at the ends of lines
+	ChainSplitDots bool
 }
 
 // NewDefaultConfig returns a [Config] with default values.
