@@ -137,6 +137,10 @@ func (s *Shortener) formatStmt(stmt dst.Stmt, force bool) {
 			s.formatStmt(st.Init, shouldShorten)
 		}
 
+		if st.Else != nil {
+			s.formatStmt(st.Else, shouldShorten)
+		}
+
 	case *dst.RangeStmt:
 		s.formatStmt(st.Body, false)
 

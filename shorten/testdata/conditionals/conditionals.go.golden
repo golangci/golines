@@ -2,9 +2,36 @@ package fixtures
 
 import "fmt"
 
-func testFunc3() {
+func _() {
 	if "hello this is a big string" == "this is a small string" &&
 		"this is another big string" == "this is an even bigger string >>>" {
 		fmt.Print("inside if statement")
+	}
+}
+
+func _() {
+	if "hello this is a big string" == "this is a small string" &&
+		"this is another big string" == "this is an even bigger string >>>" {
+		fmt.Print(
+			"Lorem ipsum dolor sit amet deserunt. Commodo duis Lorem pariatur quis labore non quis aliquip.",
+		)
+	} else {
+		fmt.Print(
+			"Lorem ipsum dolor sit amet deserunt. Commodo duis Lorem pariatur quis labore non quis aliquip.",
+		)
+	}
+}
+
+func _() {
+	if "hello this is a big string" == "this is a small string" &&
+		"this is another big string" == "this is an even bigger string >>>" {
+		fmt.Print(
+			"Lorem ipsum dolor sit amet deserunt. Commodo duis Lorem pariatur quis labore non quis aliquip.",
+		)
+	} else if "hello this is a big string 1" == "this is a small string" &&
+		"this is another big string 2" == "this is an even bigger string >>>" {
+		fmt.Print(
+			"Lorem ipsum dolor sit amet deserunt. Commodo duis Lorem pariatur quis labore non quis aliquip.",
+		)
 	}
 }
