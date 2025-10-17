@@ -10,6 +10,7 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
+	"github.com/golangci/golines/shorten/internal/comments"
 	"github.com/golangci/golines/shorten/internal/graph"
 	"github.com/golangci/golines/shorten/internal/tags"
 )
@@ -72,6 +73,8 @@ func WithLogger(logger Logger) Options {
 type Shortener struct {
 	config *Config
 
+	cs *comments.Shortener
+
 	logger Logger
 }
 
@@ -84,6 +87,13 @@ func NewShortener(config *Config, opts ...Options) *Shortener {
 	s := &Shortener{
 		config: config,
 		logger: &noopLogger{},
+	}
+
+	if config.ShortenComments {
+		s.cs = &comments.Shortener{
+			MaxLen: config.MaxLen,
+			TabLen: config.TabLen,
+		}
 	}
 
 	for _, opt := range opts {
@@ -173,8 +183,8 @@ func (s *Shortener) Process(content []byte) ([]byte, error) {
 		content = removeAnnotations(content)
 	}
 
-	if s.config.ShortenComments {
-		content = s.shortenCommentsFunc(content)
+	if s.cs != nil {
+		content = s.cs.Process(content)
 	}
 
 	// Do the final round of non-line-length-aware formatting after we've fixed up the comments
@@ -184,21 +194,6 @@ func (s *Shortener) Process(content []byte) ([]byte, error) {
 	}
 
 	return content, nil
-}
-
-// lineLen gets the width of the provided line after tab expansion.
-func (s *Shortener) lineLen(line string) int {
-	length := 0
-
-	for _, char := range line {
-		if char == '\t' {
-			length += s.config.TabLen
-		} else {
-			length++
-		}
-	}
-
-	return length
 }
 
 func (s *Shortener) createDot(result dst.Node) error {
