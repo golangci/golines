@@ -212,7 +212,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 		}
 
 	case *dst.CompositeLit:
-		if shouldShorten {
+		if shouldShorten || annotation.HasRecursive(e) {
 			for i, element := range e.Elts {
 				if i == 0 {
 					element.Decorations().Before = dst.NewLine
