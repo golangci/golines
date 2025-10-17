@@ -3,7 +3,9 @@ package shorten
 import (
 	"strings"
 
+	"github.com/golangci/golines/shorten/internal"
 	"github.com/golangci/golines/shorten/internal/annotation"
+	"github.com/golangci/golines/shorten/internal/comments"
 )
 
 // annotateLongLines adds specially formatted comments to all eligible lines that
@@ -17,7 +19,7 @@ func (s *Shortener) annotateLongLines(lines []string) ([]string, int) {
 	prevLen := -1
 
 	for _, line := range lines {
-		length := s.lineLen(line)
+		length := internal.LineLength(line, s.config.TabLen)
 
 		if prevLen > -1 {
 			if length <= s.config.MaxLen {
@@ -28,7 +30,7 @@ func (s *Shortener) annotateLongLines(lines []string) ([]string, int) {
 				annotatedLines[len(annotatedLines)-1] = annotation.Create(length)
 				linesToShorten++
 			}
-		} else if !isComment(line) && length > s.config.MaxLen {
+		} else if !comments.Is(line) && length > s.config.MaxLen {
 			annotatedLines = append(
 				annotatedLines,
 				annotation.Create(length),
