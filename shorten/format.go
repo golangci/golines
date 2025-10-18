@@ -145,10 +145,21 @@ func (s *Shortener) formatStmt(stmt dst.Stmt, force bool) {
 	case *dst.SwitchStmt:
 		s.formatStmt(st.Body, false)
 
+	case *dst.BadStmt, *dst.EmptyStmt, *dst.LabeledStmt,
+		*dst.SendStmt, *dst.IncDecStmt, *dst.BranchStmt, *dst.TypeSwitchStmt:
+		// These statements are explicitly defined to improve switch cases exhaustiveness.
+		// They may be handled in the future.
+		if shouldShorten {
+			s.logger.Debug(
+				"got a statement type that is not shortened",
+				slog.Any("stmt_type", stmtType),
+			)
+		}
+
 	default:
 		if shouldShorten {
 			s.logger.Debug(
-				"got a statement type that can't be shortened",
+				"got an unknown statement type",
 				slog.Any("stmt_type", stmtType),
 			)
 		}
