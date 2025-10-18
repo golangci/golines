@@ -73,7 +73,7 @@ func WithLogger(logger Logger) Options {
 type Shortener struct {
 	config *Config
 
-	cs *comments.Shortener
+	commentsShortener *comments.Shortener
 
 	logger Logger
 }
@@ -90,7 +90,7 @@ func NewShortener(config *Config, opts ...Options) *Shortener {
 	}
 
 	if config.ShortenComments {
-		s.cs = &comments.Shortener{
+		s.commentsShortener = &comments.Shortener{
 			MaxLen: config.MaxLen,
 			TabLen: config.TabLen,
 		}
@@ -169,8 +169,8 @@ func (s *Shortener) Process(content []byte) ([]byte, error) {
 		content = removeAnnotations(content)
 	}
 
-	if s.cs != nil {
-		content = s.cs.Process(content)
+	if s.commentsShortener != nil {
+		content = s.commentsShortener.Process(content)
 	}
 
 	// Do the final round of non-line-length-aware formatting after we've fixed up the comments
