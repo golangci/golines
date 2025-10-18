@@ -65,13 +65,6 @@ func (s *Shortener) formatDecl(decl dst.Decl) {
 	}
 }
 
-// formatFieldList formats a field list in a function declaration.
-func (s *Shortener) formatFieldList(fieldList *dst.FieldList) {
-	for i, field := range fieldList.List {
-		formatList(field, i)
-	}
-}
-
 // formatStmt formats an AST statement node.
 // Among other examples, these include assignments, case clauses,
 // for statements, if statements, and select statements.
@@ -87,14 +80,10 @@ func (s *Shortener) formatStmt(stmt dst.Stmt, force bool) {
 
 	switch st := stmt.(type) {
 	case *dst.AssignStmt:
-		for _, expr := range st.Rhs {
-			s.formatExpr(expr, shouldShorten, false)
-		}
+		s.formatExprs(st.Rhs, shouldShorten, false)
 
 	case *dst.BlockStmt:
-		for _, stmt := range st.List {
-			s.formatStmt(stmt, false)
-		}
+		s.formatStmts(st.List, false)
 
 	case *dst.CaseClause:
 		if shouldShorten {
@@ -105,14 +94,10 @@ func (s *Shortener) formatStmt(stmt dst.Stmt, force bool) {
 			}
 		}
 
-		for _, stmt := range st.Body {
-			s.formatStmt(stmt, false)
-		}
+		s.formatStmts(st.Body, false)
 
 	case *dst.CommClause:
-		for _, stmt := range st.Body {
-			s.formatStmt(stmt, false)
-		}
+		s.formatStmts(st.Body, false)
 
 	case *dst.DeclStmt:
 		s.formatDecl(st.Decl)
@@ -145,9 +130,7 @@ func (s *Shortener) formatStmt(stmt dst.Stmt, force bool) {
 		s.formatStmt(st.Body, false)
 
 	case *dst.ReturnStmt:
-		for _, expr := range st.Results {
-			s.formatExpr(expr, shouldShorten, false)
-		}
+		s.formatExprs(st.Results, shouldShorten, false)
 
 	case *dst.SelectStmt:
 		s.formatStmt(st.Body, false)
@@ -193,10 +176,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 			s.config.ChainSplitDots && (isChain || chainLength(e) > 1) {
 			e.Decorations().After = dst.NewLine
 
-			for _, arg := range e.Args {
-				s.formatExpr(arg, false, true)
-			}
-
+			s.formatExprs(e.Args, false, true)
 			s.formatExpr(e.Fun, shouldShorten, true)
 		} else {
 			for i, arg := range e.Args {
@@ -221,9 +201,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 			}
 		}
 
-		for _, element := range e.Elts {
-			s.formatExpr(element, false, isChain)
-		}
+		s.formatExprs(e.Elts, false, isChain)
 
 	case *dst.FuncLit:
 		s.formatStmt(e.Body, false)
@@ -271,9 +249,7 @@ func (s *Shortener) formatSpec(spec dst.Spec, force bool) {
 
 	switch sp := spec.(type) {
 	case *dst.ValueSpec:
-		for _, expr := range sp.Values {
-			s.formatExpr(expr, shouldShorten, false)
-		}
+		s.formatExprs(sp.Values, shouldShorten, false)
 
 	case *dst.TypeSpec:
 		s.formatExpr(sp.Type, false, false)
@@ -285,6 +261,25 @@ func (s *Shortener) formatSpec(spec dst.Spec, force bool) {
 				slog.Any("spec_type", reflect.TypeOf(sp)),
 			)
 		}
+	}
+}
+
+func (s *Shortener) formatStmts(stmts []dst.Stmt, force bool) {
+	for _, stmt := range stmts {
+		s.formatStmt(stmt, force)
+	}
+}
+
+func (s *Shortener) formatExprs(exprs []dst.Expr, force, isChain bool) {
+	for _, expr := range exprs {
+		s.formatExpr(expr, force, isChain)
+	}
+}
+
+// formatFieldList formats a field list in a function declaration.
+func (s *Shortener) formatFieldList(fieldList *dst.FieldList) {
+	for i, field := range fieldList.List {
+		formatList(field, i)
 	}
 }
 
