@@ -10,6 +10,13 @@ import (
 	"github.com/golangci/golines/shorten/internal/tags"
 )
 
+// formatFile formats the provided AST file starting at the top-level declarations.
+func (s *Shortener) formatFile(file *dst.File) {
+	for _, decl := range file.Decls {
+		s.formatNode(decl)
+	}
+}
+
 // formatNode formats the provided AST node.
 // The appropriate helper function is called based on
 // whether the node is a declaration, expression, statement, or spec.
