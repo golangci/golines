@@ -13,9 +13,11 @@ import (
 // If a line already has one of these comments from a previous shortening round,
 // then the comment contents are updated.
 func (s *Shortener) annotateLongLines(lines []string) ([]string, int) {
-	var annotatedLines []string
+	var (
+		annotatedLines   []string
+		nbLinesToShorten int
+	)
 
-	linesToShorten := 0
 	prevLen := -1
 
 	for _, line := range lines {
@@ -28,21 +30,23 @@ func (s *Shortener) annotateLongLines(lines []string) ([]string, int) {
 			} else if length < prevLen {
 				// Replace annotation with a new length
 				annotatedLines[len(annotatedLines)-1] = annotation.Create(length)
-				linesToShorten++
+
+				nbLinesToShorten++
 			}
 		} else if !comments.Is(line) && length > s.config.MaxLen {
 			annotatedLines = append(
 				annotatedLines,
 				annotation.Create(length),
 			)
-			linesToShorten++
+
+			nbLinesToShorten++
 		}
 
 		annotatedLines = append(annotatedLines, line)
 		prevLen = annotation.Parse(line)
 	}
 
-	return annotatedLines, linesToShorten
+	return annotatedLines, nbLinesToShorten
 }
 
 // removeAnnotations removes all comments added by the annotateLongLines function above.
