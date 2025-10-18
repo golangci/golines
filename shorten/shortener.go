@@ -155,10 +155,8 @@ func (s *Shortener) Process(content []byte) ([]byte, error) {
 			}
 		}
 
-		// Process the file starting at the top-level declarations
-		for _, decl := range result.Decls {
-			s.formatNode(decl)
-		}
+		// Process the file.
+		s.formatFile(result)
 
 		// Materialize output
 		output := bytes.NewBuffer([]byte{})
