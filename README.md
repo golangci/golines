@@ -115,6 +115,10 @@ The original behavior can be used by running the tool with the
 
 ### Struct tag reformatting
 
+> [!IMPORTANT]
+> This option is deprecated and will be potentially removed in a future version.
+> See [this issue](https://github.com/segmentio/golines/issues/176) and [this issue](https://github.com/golang/go/issues/16918) for more details.
+
 In addition to shortening long lines, the tool also aligns struct tag keys;
 see the associated [before](shorten/testdata/struct_tags/struct_tags.go) 
 and [after](shorten/testdata/struct_tags/struct_tags.go.golden)
