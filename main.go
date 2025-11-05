@@ -129,6 +129,7 @@ func run(s *sequencer) {
 		}()
 
 		_ = pprof.StartCPUProfile(f)
+
 		defer pprof.StopCPUProfile()
 	}
 
