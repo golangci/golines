@@ -38,13 +38,13 @@ var (
 		Default("true").Bool()
 	debugFlag = kingpin.Flag(
 		"debug",
-		"Show debug output").Short('d').Default("false").Bool()
+		"Show debug logs").Short('d').Default("false").Bool()
 	dotFile = kingpin.Flag(
 		"dot-file",
-		"Path to dot representation of the AST graph").Default("").String()
+		"Path to dot representation of the AST graph (for debugging)").Default("").String()
 	dryRun = kingpin.Flag(
 		"dry-run",
-		"Show diffs without writing anything").Default("false").Bool()
+		"Display diffs instead of rewriting files").Default("false").Bool()
 	ignoreGenerated = kingpin.Flag(
 		"ignore-generated",
 		"Ignore generated go files").Default("true").Bool()
@@ -77,7 +77,7 @@ var (
 		"Print out version and exit").Default("false").Bool()
 	writeOutput = kingpin.Flag(
 		"write-output",
-		"Write output to source instead of stdout").Short('w').Default("false").Bool()
+		"Write result to (source) file instead of stdout").Short('w').Default("false").Bool()
 
 	// Args.
 	paths = kingpin.Arg(
