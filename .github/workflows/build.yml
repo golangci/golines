@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-      - master
   pull_request:
     branches:
       - main
-      - master
 
 permissions:
   contents: read
@@ -25,10 +23,7 @@ jobs:
           go-version: stable
 
       - name: Check and get dependencies
-        run: |
-          go mod tidy
-          git diff --exit-code go.mod
-          git diff --exit-code go.sum
+        run: go mod tidy -diff
 
       - name: Build with goreleaser
         uses: goreleaser/goreleaser-action@v6
