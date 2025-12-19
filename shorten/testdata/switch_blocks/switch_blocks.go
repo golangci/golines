@@ -2,7 +2,7 @@ package fixtures
 
 import "fmt"
 
-func testFunc2() {
+func _(a int) error {
 	c := make(chan int)
 
 	for {
@@ -17,4 +17,30 @@ func testFunc2() {
 
 		break
 	}
+
+	return nil
+}
+
+func _() {
+	var pneumonoultramicroscopicsilicovolcanoconiosis string
+	var floccinaucinihilipilification string
+
+	switch myfunction(pneumonoultramicroscopicsilicovolcanoconiosis, floccinaucinihilipilification) {
+	case "a":
+		fmt.Println("a")
+	}
+}
+
+func _() {
+	var pneumonoultramicroscopicsilicovolcanoconiosis string
+	var floccinaucinihilipilification string
+
+	switch a := "taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu"; myfunction(pneumonoultramicroscopicsilicovolcanoconiosis, floccinaucinihilipilification) {
+	case "a":
+		fmt.Println(a)
+	}
+}
+
+func myfunction(a, b string) string {
+	return ""
 }
