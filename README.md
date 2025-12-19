@@ -11,7 +11,7 @@ in addition to all the formatting fixes done by [`gofmt`](https://golang.org/cmd
 
 This repository is a fork of [segmentio/golines](https://github.com/segmentio/golines/).
 
-The original repository will probably be archived in Q4 2025.
+The original repository has been archived the [2025-12-19](https://github.com/segmentio/golines?tab=readme-ov-file#maintenance--archiving).
 
 ## Usage
 
@@ -227,3 +227,7 @@ For each input source file, `golines` runs through the following process:
   `stdout` or the source file
 
 See [this blog post](https://yolken.net/blog/cleaner-go-code-golines) for more technical details.
+
+## Thanks
+
+Thanks to [@yolken](https://github.com/yolken) the original author of this tool.
