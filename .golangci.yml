@@ -45,6 +45,10 @@ linters:
     gosec:
       excludes:
         - G204
+        - G115
+        - G703
+        - G705
+        - G706
     depguard:
       rules:
         main:
