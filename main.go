@@ -69,6 +69,12 @@ var (
 	shortenComments = kingpin.Flag(
 		"shorten-comments",
 		"Shorten single-line comments").Default("false").Bool()
+	funcParamThreshold = kingpin.Flag(
+		"func-param-threshold",
+		"Expand function signatures to one-param-per-line when they have this many or more parameters "+
+			"(0 to disable)",
+	).
+		Default("0").Int()
 	tabLen = kingpin.Flag(
 		"tab-len",
 		"Length of a tab").Short('t').Default("4").Int()
@@ -151,13 +157,14 @@ type Runner struct {
 
 func NewRunner() *Runner {
 	config := &shorten.Config{
-		MaxLen:          deref(maxLen),
-		TabLen:          deref(tabLen),
-		KeepAnnotations: deref(keepAnnotations),
-		ShortenComments: deref(shortenComments),
-		ReformatTags:    deref(reformatTags),
-		DotFile:         deref(dotFile),
-		ChainSplitDots:  deref(chainSplitDots),
+		MaxLen:             deref(maxLen),
+		TabLen:             deref(tabLen),
+		KeepAnnotations:    deref(keepAnnotations),
+		ShortenComments:    deref(shortenComments),
+		ReformatTags:       deref(reformatTags),
+		DotFile:            deref(dotFile),
+		ChainSplitDots:     deref(chainSplitDots),
+		FuncParamThreshold: deref(funcParamThreshold),
 	}
 
 	return &Runner{
