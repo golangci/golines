@@ -42,18 +42,22 @@ type Config struct {
 
 	// ChainSplitDots Whether to split chain methods by putting dots at the ends of lines
 	ChainSplitDots bool
+
+	// IgnoreFuncSignatures Whether to ignore function signatures
+	IgnoreFuncSignatures bool
 }
 
 // NewDefaultConfig returns a [Config] with default values.
 func NewDefaultConfig() *Config {
 	return &Config{
-		MaxLen:          100,
-		TabLen:          4,
-		KeepAnnotations: false,
-		ShortenComments: false,
-		ReformatTags:    true,
-		DotFile:         "",
-		ChainSplitDots:  true,
+		MaxLen:               100,
+		TabLen:               4,
+		KeepAnnotations:      false,
+		ShortenComments:      false,
+		ReformatTags:         true,
+		DotFile:              "",
+		ChainSplitDots:       true,
+		IgnoreFuncSignatures: false,
 	}
 }
 
