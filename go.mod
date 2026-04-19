@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/alecthomas/kingpin/v2 v2.4.0
-	github.com/dave/dst v0.27.3
+	github.com/dave/dst v0.27.4
 	github.com/dave/jennifer v1.7.1
 	github.com/ldez/structtags v0.6.1
 	github.com/rogpeppe/go-internal v1.14.1
