@@ -16,6 +16,7 @@ linters:
     - sqlclosecheck # SQL
     - cyclop # duplicate of gocyclo
     - wsl # Deprecated
+    - gomodguard # Deprecated
     - err113
     - exhaustive
     - exhaustruct
@@ -37,6 +38,8 @@ linters:
     funlen:
       lines: -1
       statements: 50
+    goconst:
+      ignore-tests: true
     godox:
       keywords:
         - FIXME
