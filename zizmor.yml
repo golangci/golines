@@ -1,0 +1,8 @@
+rules:
+  secrets-outside-env:
+    disable: true
+  cache-poisoning:
+    ignore:
+      # This is a false positive because the action is using goreleaser,
+      # but it's only used for building.
+      - build.yml
