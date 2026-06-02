@@ -7,7 +7,7 @@ require (
 	github.com/dave/dst v0.27.4
 	github.com/dave/jennifer v1.7.1
 	github.com/ldez/structtags v0.6.1
-	github.com/rogpeppe/go-internal v1.14.1
+	github.com/rogpeppe/go-internal v1.15.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/sync v0.20.0
 	golang.org/x/term v0.43.0
