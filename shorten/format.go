@@ -253,6 +253,9 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 	case *dst.SelectorExpr:
 		s.formatExpr(e.X, shouldShorten, isChain)
 
+	case *dst.StarExpr:
+		s.formatExpr(e.X, shouldShorten, isChain)
+
 	case *dst.StructType:
 		if s.config.ReformatTags {
 			tags.FormatStructTags(e.Fields)
