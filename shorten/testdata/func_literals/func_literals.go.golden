@@ -1,0 +1,28 @@
+package fixtures
+
+func chainFuncLiteralParams() {
+	m.EXPECT().
+		Foo(1, 2).
+		DoAndReturn(
+			func(
+				_ *Ctx,
+				firstArgument *string,
+				secondArgument []*string,
+				thirdArgument map[string]string,
+			) (*string, error) {
+				return nil, nil
+			},
+		)
+}
+
+func assignedFuncLiteralParams() {
+	handler := func(
+		firstArgument string,
+		secondArgument string,
+		thirdArgument string,
+		fourthArgument string,
+	) error {
+		return nil
+	}
+	_ = handler
+}

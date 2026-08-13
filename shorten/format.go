@@ -199,11 +199,18 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 	case *dst.CallExpr:
 		shortenChildArgs := shouldShorten || annotation.HasRecursive(e)
 
-		_, ok := e.Fun.(*dst.SelectorExpr)
+		selectorExpr, ok := e.Fun.(*dst.SelectorExpr)
 
 		if ok && shortenChildArgs &&
 			s.config.ChainSplitDots && (isChain || chainLength(e) > 1) {
 			e.Decorations().After = dst.NewLine
+
+			// An annotation on the selector means this segment is still too long after dot-splitting.
+			if annotation.Has(selectorExpr.Sel) {
+				for i, arg := range e.Args {
+					formatList(arg, i)
+				}
+			}
 
 			s.formatExprs(e.Args, false, true)
 			s.formatExpr(e.Fun, shouldShorten, true)
@@ -233,6 +240,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 		s.formatExprs(e.Elts, false, isChain)
 
 	case *dst.FuncLit:
+		s.formatExpr(e.Type, shouldShorten, isChain)
 		s.formatStmt(e.Body, false)
 
 	case *dst.FuncType:
