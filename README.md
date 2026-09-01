@@ -84,6 +84,11 @@ the command provided here should accept its input via `stdin` and write its outp
 By default, the tool will not format any files that look like they're generated.
 If you want to reformat these too, run with the flag `--ignore-generated=false`.
 
+### Ignoring Function Signatures
+
+By default, the tool will format function signatures that exceed the maximum line length by splitting their parameters across multiple lines.
+To prevent this and keep function signatures on a single line, run with the flag `--ignore-func-signatures`.
+
 ### Chained method splitting
 
 There are several possible ways to split lines that are part of
