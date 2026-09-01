@@ -51,7 +51,8 @@ func (s *Shortener) formatNode(node dst.Node) {
 func (s *Shortener) formatDecl(decl dst.Decl) {
 	switch d := decl.(type) {
 	case *dst.FuncDecl:
-		if d.Type != nil && d.Type.Params != nil && annotation.HasRecursive(d) {
+		if d.Type != nil && d.Type.Params != nil &&
+			(annotation.HasRecursive(d) || s.shouldExpandParams(d.Type.Params)) {
 			s.formatFieldList(d.Type.Params)
 		}
 
@@ -233,16 +234,21 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 		s.formatExprs(e.Elts, false, isChain)
 
 	case *dst.FuncLit:
+		if e.Type != nil && s.shouldExpandParams(e.Type.Params) {
+			s.formatFieldList(e.Type.Params)
+		}
+
 		s.formatStmt(e.Body, false)
 
 	case *dst.FuncType:
-		if shouldShorten {
+		if shouldShorten || s.shouldExpandParams(e.Params) {
 			s.formatFieldList(e.Params)
 		}
 
 	case *dst.InterfaceType:
 		for _, method := range e.Methods.List {
-			if annotation.Has(method) {
+			funcType, isFuncType := method.Type.(*dst.FuncType)
+			if annotation.Has(method) || (isFuncType && s.shouldExpandParams(funcType.Params)) {
 				s.formatExpr(method.Type, true, isChain)
 			}
 		}
