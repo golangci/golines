@@ -42,6 +42,11 @@ type Config struct {
 
 	// ChainSplitDots Whether to split chain methods by putting dots at the ends of lines
 	ChainSplitDots bool
+
+	// FuncParamThreshold triggers multi-line expansion of function signatures
+	// with this many or more parameters, regardless of line length.
+	// Set to 0 (default) to disable.
+	FuncParamThreshold int
 }
 
 // NewDefaultConfig returns a [Config] with default values.
@@ -186,10 +191,34 @@ func (s *Shortener) Process(content []byte) ([]byte, error) {
 // if there are lines to shorten,
 // or if this is the first round (0),
 // and the option to reformat struct tags is enabled,
-// and there are struct tags with multiple entries.
+// and there are struct tags with multiple entries,
+// or if this is the first round (0),
+// and func param threshold expansion is enabled.
 func (s *Shortener) shouldContinue(nbLinesToShorten, round int, lines []string) bool {
 	return nbLinesToShorten > 0 ||
-		round == 0 && s.config.ReformatTags && tags.HasMultipleEntries(lines)
+		round == 0 && s.config.ReformatTags && tags.HasMultipleEntries(lines) ||
+		round == 0 && s.config.FuncParamThreshold > 0
+}
+
+// shouldExpandParams reports whether a field list has enough parameters
+// to trigger multi-line expansion based on the configured threshold.
+// Named parameters with shared types (e.g. a, b int) count individually.
+func (s *Shortener) shouldExpandParams(params *dst.FieldList) bool {
+	if s.config.FuncParamThreshold <= 0 || params == nil {
+		return false
+	}
+
+	count := 0
+
+	for _, field := range params.List {
+		if len(field.Names) == 0 {
+			count++ // unnamed parameter: func(int, string)
+		} else {
+			count += len(field.Names) // named: func(a, b int) counts as 2
+		}
+	}
+
+	return count >= s.config.FuncParamThreshold
 }
 
 func (s *Shortener) createDot(result dst.Node) error {
