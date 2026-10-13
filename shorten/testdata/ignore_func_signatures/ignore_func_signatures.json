@@ -1,0 +1,5 @@
+{
+    "MaxLen": 100,
+    "TabLen": 4,
+    "IgnoreFuncSignatures": true
+}

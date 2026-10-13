@@ -48,6 +48,9 @@ var (
 	ignoreGenerated = kingpin.Flag(
 		"ignore-generated",
 		"Ignore generated go files").Default("true").Bool()
+	ignoreFuncSignatures = kingpin.Flag(
+		"ignore-func-signatures",
+		"Ignore function signatures").Default("false").Bool()
 	ignoredDirs = kingpin.Flag(
 		"ignored-dirs",
 		"Directories to ignore").Default("vendor", "testdata", "node_modules").Strings()
@@ -151,13 +154,14 @@ type Runner struct {
 
 func NewRunner() *Runner {
 	config := &shorten.Config{
-		MaxLen:          deref(maxLen),
-		TabLen:          deref(tabLen),
-		KeepAnnotations: deref(keepAnnotations),
-		ShortenComments: deref(shortenComments),
-		ReformatTags:    deref(reformatTags),
-		DotFile:         deref(dotFile),
-		ChainSplitDots:  deref(chainSplitDots),
+		MaxLen:               deref(maxLen),
+		TabLen:               deref(tabLen),
+		KeepAnnotations:      deref(keepAnnotations),
+		ShortenComments:      deref(shortenComments),
+		ReformatTags:         deref(reformatTags),
+		DotFile:              deref(dotFile),
+		ChainSplitDots:       deref(chainSplitDots),
+		IgnoreFuncSignatures: deref(ignoreFuncSignatures),
 	}
 
 	return &Runner{

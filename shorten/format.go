@@ -51,7 +51,7 @@ func (s *Shortener) formatNode(node dst.Node) {
 func (s *Shortener) formatDecl(decl dst.Decl) {
 	switch d := decl.(type) {
 	case *dst.FuncDecl:
-		if d.Type != nil && d.Type.Params != nil && annotation.HasRecursive(d) {
+		if d.Type != nil && d.Type.Params != nil && annotation.HasRecursive(d) && !s.config.IgnoreFuncSignatures {
 			s.formatFieldList(d.Type.Params)
 		}
 
@@ -236,7 +236,7 @@ func (s *Shortener) formatExpr(expr dst.Expr, force, isChain bool) {
 		s.formatStmt(e.Body, false)
 
 	case *dst.FuncType:
-		if shouldShorten {
+		if shouldShorten && !s.config.IgnoreFuncSignatures {
 			s.formatFieldList(e.Params)
 		}
 
